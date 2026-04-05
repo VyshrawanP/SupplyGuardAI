@@ -1,0 +1,45 @@
+name: supplyguard_ai_frontend
+description: SupplyGuard AI Flutter command and field operations app
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  firebase_core: ^2.24.0
+  firebase_auth: ^4.15.0
+  cloud_firestore: ^4.13.0
+  firebase_messaging: ^14.7.5
+
+  google_maps_flutter: ^2.5.0
+  flutter_riverpod: ^2.4.9
+  dio: ^5.4.0
+  sqflite: ^2.3.0
+  shared_preferences: ^2.2.2
+  fl_chart: ^0.66.0
+  flutter_animate: ^4.5.0
+  shimmer: ^3.0.0
+  cached_network_image: ^3.3.0
+  flutter_local_notifications: ^16.3.0
+  uuid: ^4.2.2
+  intl: ^0.18.1
+  json_annotation: ^4.8.1
+  freezed_annotation: ^2.4.1
+  connectivity_plus: ^5.0.2
+  flutter_blue_plus: ^1.27.3
+  workmanager: ^0.5.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.2
+  build_runner: ^2.4.13
+  freezed: ^2.5.7
+  json_serializable: ^6.8.0
+
+flutter:
+  uses-material-design: true
