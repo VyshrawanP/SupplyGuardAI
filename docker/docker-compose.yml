@@ -1,0 +1,207 @@
+version: '3.8'
+
+x-common-env: &common-env
+  env_file:
+    - ../.env
+  restart: unless-stopped
+  networks:
+    - supplyguard
+  deploy:
+    resources:
+      limits:
+        cpus: '1.00'
+        memory: 1024M
+      reservations:
+        cpus: '0.25'
+        memory: 256M
+
+x-health-node: &health-node
+  interval: 30s
+  timeout: 5s
+  retries: 3
+  start_period: 20s
+
+services:
+  api-gateway:
+    <<: *common-env
+    build: ../backend/api-gateway
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      OFFLINE_MODE: "true"
+    depends_on:
+      - ingestion-service
+      - risk-engine
+      - route-optimizer
+      - drone-engine
+      - rescue-engine
+      - inventory-engine
+      - anomaly-engine
+      - ai-explainer
+      - simulation-engine
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      <<: *health-node
+
+  ingestion-service:
+    <<: *common-env
+    build: ../backend/ingestion-service
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: 3001
+      OFFLINE_MODE: "true"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      <<: *health-node
+
+  risk-engine:
+    <<: *common-env
+    build: ../backend/risk-engine
+    ports:
+      - "3002:3002"
+    environment:
+      PORT: 3002
+      OFFLINE_MODE: "true"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3002/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      <<: *health-node
+
+  route-optimizer:
+    <<: *common-env
+    build: ../backend/route-optimizer
+    ports:
+      - "3003:3003"
+    environment:
+      PORT: 3003
+      OFFLINE_MODE: "true"
+      LOCAL_OSRM_URL: http://osrm-backend:5000
+    depends_on:
+      - osrm-backend
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3003/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      <<: *health-node
+
+  drone-engine:
+    <<: *common-env
+    build: ../backend/drone-engine
+    ports:
+      - "3004:3004"
+    environment:
+      PORT: 3004
+      OFFLINE_MODE: "true"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3004/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      <<: *health-node
+
+  rescue-engine:
+    <<: *common-env
+    build: ../backend/rescue-engine
+    ports:
+      - "3005:3005"
+    environment:
+      PORT: 3005
+      OFFLINE_MODE: "true"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3005/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      <<: *health-node
+
+  inventory-engine:
+    <<: *common-env
+    build: ../backend/inventory-engine
+    ports:
+      - "3006:3006"
+    environment:
+      PORT: 3006
+      OFFLINE_MODE: "true"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3006/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      <<: *health-node
+
+  anomaly-engine:
+    <<: *common-env
+    build: ../backend/anomaly-engine
+    ports:
+      - "3007:3007"
+    environment:
+      PORT: 3007
+      OFFLINE_MODE: "true"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3007/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      <<: *health-node
+
+  ai-explainer:
+    <<: *common-env
+    build: ../backend/ai-explainer
+    ports:
+      - "3008:3008"
+    environment:
+      PORT: 3008
+      OFFLINE_MODE: "true"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3008/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      <<: *health-node
+
+  simulation-engine:
+    <<: *common-env
+    build: ../backend/simulation-engine
+    ports:
+      - "3009:3009"
+    environment:
+      PORT: 3009
+      OFFLINE_MODE: "true"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3009/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      <<: *health-node
+
+  offline-server:
+    <<: *common-env
+    build: ../backend/offline-server
+    ports:
+      - "3010:3010"
+    environment:
+      PORT: 3010
+      OFFLINE_MODE: "true"
+    volumes:
+      - ./local-data:/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3010/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      <<: *health-node
+
+  osrm-backend:
+    image: osrm/osrm-backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    networks:
+      - supplyguard
+    volumes:
+      - ./osrm-data:/data
+    command: osrm-routed --algorithm mld /data/india-latest.osrm
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:5000/route/v1/driving/85.8245,20.2961;85.8828,20.4625?steps=false >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  tileserver-gl:
+    image: maptiler/tileserver-gl
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    networks:
+      - supplyguard
+    volumes:
+      - ./map-tiles:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/ >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+networks:
+  supplyguard:
+    driver: bridge
