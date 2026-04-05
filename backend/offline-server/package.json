@@ -1,0 +1,26 @@
+{
+  "name": "@supplyguard/offline-server",
+  "version": "1.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.7.0",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.1",
+    "firebase-admin": "^12.7.0",
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.19.17",
+    "@types/ws": "^8.5.13",
+    "tsx": "^4.21.0",
+    "typescript": "5.6.3"
+  }
+}
