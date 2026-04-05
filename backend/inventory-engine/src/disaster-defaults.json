@@ -1,0 +1,22 @@
+{
+  "rice_kg": 120,
+  "dal_kg": 65,
+  "food_packet_adult": 250,
+  "food_packet_child": 120,
+  "emergency_ration_bar": 140,
+  "biscuit_pack": 180,
+  "drinking_water_litre": 900,
+  "water_purification_tablet": 45,
+  "oral_rehydration_salts": 30,
+  "first_aid_kit": 10,
+  "antibiotic_course": 6,
+  "pain_reliever_strip": 14,
+  "insulin_vial": 4,
+  "blanket": 20,
+  "tarpaulin_sheet": 10,
+  "life_jacket": 5,
+  "solar_lantern": 6,
+  "baby_formula": 12,
+  "sanitary_kit": 18,
+  "diesel_litre": 350
+}
