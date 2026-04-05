@@ -1,92 +1,93 @@
-# SupplyGuard AI 🚚🤖
+# SupplyGuard AI
 
-**Real-time supply chain disruption prediction with explainable AI recommendations**
-
-![System Architecture](docs/architecture-diagram.png)
-
-## Problem Statement
-
-Modern supply chains manage millions of concurrent shipments across volatile transportation networks. Critical disruptions are identified only after delivery timelines are already compromised, leading to:
-- 23% average delivery delays industry-wide
-- $1.1 trillion annual losses due to supply chain inefficiencies
-- Low operator trust in automated rerouting systems (45% override rate)
-
-## Our Solution
-
-SupplyGuard AI combines real-time anomaly detection with RAG-powered explainability to:
-1. **Preemptively detect** disruptions before they cascade
-2. **Generate human-readable explanations** using historical context
-3. **Recommend optimized routes** with measurable impact
-
-### Key Innovation: RAG-Based Explainability
-
-Unlike black-box ML systems, SupplyGuard provides context-aware explanations:
-
-> *"Shipment #A123 on Highway 9 is delayed. Weather data shows heavy rain (25mm/hr). Historical data indicates 40% avg delay on this route during rain. Recommended reroute via Highway 15 reduces ETA by 45 minutes."*
-
-This increases operator trust from 45% to 85% acceptance rate.
-
-## Tech Stack
-
-- **Backend**: Java Spring Boot, Kafka, Redis, PostgreSQL
-- **RAG Engine**: Python FastAPI, ChromaDB, Groq (Llama-3.3-70B)
-- **Frontend**: React, shadcn/ui, Recharts
-- **Infrastructure**: Docker Compose
-
-## Features
-
-✅ Real-time shipment tracking with GPS simulation  
-✅ Multi-factor disruption detection (weather, traffic, delays)  
-✅ RAG-powered contextual explanations  
-✅ Dynamic route optimization recommendations  
-✅ Operator decision interface with trust analytics  
-✅ Live dashboard with performance metrics  
-
-## Quick Start
-```bash
-# Clone repo
-git clone https://github.com/vyshrawan/supplyguard-ai.git
-cd supplyguard-ai
-
-# Start all services
-docker-compose up -d
-
-# Access dashboard
-open http://localhost:3000
-```
-
-See [SETUP.md](docs/SETUP.md) for detailed instructions.
-
-## Demo
-
-[Demo Video (2 min)](link-to-video)
+SupplyGuard AI is a disaster logistics platform for routing, drone dispatch, rescue coordination, inventory resilience, anomaly monitoring, explainability, and offline field operations. This repository is being restructured into a monorepo with independent backend services, a Flutter client, Firestore configuration, and operational scripts.
 
 ## Architecture
 
-See [ARCHITECTURE.md](docs/ARCHITECTURE.md) for system design details.
+- `frontend/`: Flutter application for coordinators, operators, and public survivor reporting.
+- `backend/api-gateway`: Firebase-authenticated gateway with rate limits, request tracing, proxy routing, and downstream health aggregation.
+- `backend/ingestion-service`: External signal intake, normalization, Firestore persistence, and Pub/Sub publication.
+- `backend/risk-engine`: Deterministic route risk scoring and downstream decision publication.
+- `firestore/`: Security rules, composite indexes, and seed data for the Odisha cyclone scenario.
+- `scripts/`: Operational helpers for Pub/Sub setup and Firestore seeding.
 
-## Metrics
+## Current Status
 
-- **Disruption Detection Rate**: 94%
-- **Average Delay Reduction**: 38 minutes
-- **AI Recommendation Acceptance**: 85% (vs 45% industry baseline)
-- **Response Time**: <2 seconds from detection to recommendation
+Implemented in this pass:
 
-## Research Contribution
+- Root environment contract in [.env.example](/home/asus/Documents/SupplyGuardAI/.env.example)
+- Firestore access rules in [firestore.rules](/home/asus/Documents/SupplyGuardAI/firestore/firestore.rules)
+- Firestore indexes in [firestore.indexes.json](/home/asus/Documents/SupplyGuardAI/firestore/firestore.indexes.json)
+- Odisha cyclone seed dataset in [seed.js](/home/asus/Documents/SupplyGuardAI/firestore/seed-data/seed.js)
+- API gateway in [index.ts](/home/asus/Documents/SupplyGuardAI/backend/api-gateway/src/index.ts)
+- Ingestion service in [index.ts](/home/asus/Documents/SupplyGuardAI/backend/ingestion-service/src/index.ts)
+- Risk engine in [index.ts](/home/asus/Documents/SupplyGuardAI/backend/risk-engine/src/index.ts)
 
-This project explores RAG-based explainability in logistics optimization, addressing the transparency gap in automated supply chain systems.
+Still to be completed:
 
-**Research Question**: How does contextual explanation generation impact operator trust and decision quality in AI-driven route optimization?
+- Route optimizer, drone engine, rescue engine, inventory engine, anomaly engine, AI explainer, simulation engine, and offline server
+- Flutter app models, services, providers, and feature screens
+- Offline `docker-compose.yml`, deployment scripts, and expanded operator runbooks
 
-## Team
+## Prerequisites
 
-- **Vyshrawan** - Backend Architecture, RAG Integration
-- **S Abul Fazal** - AI Architecture, Resource Management
+- Node.js 18+
+- npm 10+
+- Firebase project with Firestore and Authentication enabled
+- Google Cloud project with Pub/Sub enabled
+- Service account credentials exported through `GOOGLE_APPLICATION_CREDENTIALS`
+
+## Local Development
+
+1. Copy `.env.example` to `.env` and fill in Firebase, Google Maps, OpenWeatherMap, Gemini, and Twilio credentials.
+2. Install service dependencies inside each backend service you want to run, for example:
+
+```bash
+cd backend/api-gateway && npm install
+cd ../ingestion-service && npm install
+cd ../risk-engine && npm install
+```
+
+3. Seed Firestore:
+
+```bash
+node scripts/seed-firestore.js
+```
+
+4. Start the services:
+
+```bash
+cd backend/api-gateway && npm run dev
+cd backend/ingestion-service && npm run dev
+cd backend/risk-engine && npm run dev
+```
+
+## Pub/Sub Setup
+
+Create required topics and push subscriptions with:
+
+```bash
+bash scripts/setup-pubsub.sh
+```
+
+## Firestore Data Model
+
+- `users`
+- `warehouses`
+- `warehouses/{warehouseId}/inventory`
+- `shipments`
+- `drone-fleet`
+- `rescue-teams`
+- `disaster-events`
+- `suppliers`
+- `life-jacket-ledger`
+- `ai-explanations`
+- `route-risk-scores`
+
+## Verification Notes
+
+This workspace does not currently have `tsc` installed globally, and dependencies have not been installed for the newly added backend services yet. The code has been written to compile as standalone TypeScript service packages, but a compile/test pass still needs to be run after `npm install` in each service directory.
 
 ## License
 
-MIT
-
-## Acknowledgments
-
-Built for TCS Research & Innovation Hackathon 2026
+Apache 2.0

@@ -1,0 +1,92 @@
+[
+  {
+    "segment_id": "od-nh16-bhubaneswar-cuttack",
+    "origin": { "lat": 20.2961, "lng": 85.8245 },
+    "destination": { "lat": 20.4625, "lng": 85.8828 },
+    "free_flow_time_minutes": 35
+  },
+  {
+    "segment_id": "od-nh316-bhubaneswar-puri",
+    "origin": { "lat": 20.2961, "lng": 85.8245 },
+    "destination": { "lat": 19.8135, "lng": 85.8312 },
+    "free_flow_time_minutes": 75
+  },
+  {
+    "segment_id": "od-puri-konark-coastal",
+    "origin": { "lat": 19.8135, "lng": 85.8312 },
+    "destination": { "lat": 19.8876, "lng": 86.0945 },
+    "free_flow_time_minutes": 40
+  },
+  {
+    "segment_id": "od-puri-brahmagiri",
+    "origin": { "lat": 19.8135, "lng": 85.8312 },
+    "destination": { "lat": 19.7922, "lng": 85.6215 },
+    "free_flow_time_minutes": 46
+  },
+  {
+    "segment_id": "od-berhampur-chatrapur",
+    "origin": { "lat": 19.3149, "lng": 84.7941 },
+    "destination": { "lat": 19.3553, "lng": 84.9839 },
+    "free_flow_time_minutes": 38
+  },
+  {
+    "segment_id": "od-sambalpur-bargarh",
+    "origin": { "lat": 21.4669, "lng": 83.9756 },
+    "destination": { "lat": 21.3335, "lng": 83.6191 },
+    "free_flow_time_minutes": 68
+  },
+  {
+    "segment_id": "od-bhubaneswar-pipili",
+    "origin": { "lat": 20.2961, "lng": 85.8245 },
+    "destination": { "lat": 20.1146, "lng": 85.8311 },
+    "free_flow_time_minutes": 31
+  },
+  {
+    "segment_id": "od-pipili-puri",
+    "origin": { "lat": 20.1146, "lng": 85.8311 },
+    "destination": { "lat": 19.8135, "lng": 85.8312 },
+    "free_flow_time_minutes": 39
+  },
+  {
+    "segment_id": "od-cuttack-jagatpur",
+    "origin": { "lat": 20.4625, "lng": 85.8828 },
+    "destination": { "lat": 20.5324, "lng": 85.8351 },
+    "free_flow_time_minutes": 22
+  },
+  {
+    "segment_id": "od-khurda-bhubaneswar",
+    "origin": { "lat": 20.1833, "lng": 85.6167 },
+    "destination": { "lat": 20.2961, "lng": 85.8245 },
+    "free_flow_time_minutes": 54
+  },
+  {
+    "segment_id": "od-balasore-bhadrak",
+    "origin": { "lat": 21.4942, "lng": 86.9310 },
+    "destination": { "lat": 21.0586, "lng": 86.4658 },
+    "free_flow_time_minutes": 77
+  },
+  {
+    "segment_id": "od-kendrapara-jagatsinghpur",
+    "origin": { "lat": 20.5013, "lng": 86.4227 },
+    "destination": { "lat": 20.2549, "lng": 86.1710 },
+    "free_flow_time_minutes": 59
+  },
+  {
+    "segment_id": "od-rayagada-koraput",
+    "origin": { "lat": 19.1712, "lng": 83.4160 },
+    "destination": { "lat": 18.8135, "lng": 82.7123 },
+    "free_flow_time_minutes": 105
+  },
+  {
+    "segment_id": "od-jajpur-cuttack",
+    "origin": { "lat": 20.8501, "lng": 86.3377 },
+    "destination": { "lat": 20.4625, "lng": 85.8828 },
+    "free_flow_time_minutes": 89
+  },
+  {
+    "segment_id": "od-brahmagiri-konark",
+    "origin": { "lat": 19.7922, "lng": 85.6215 },
+    "destination": { "lat": 19.8876, "lng": 86.0945 },
+    "free_flow_time_minutes": 71
+  }
+]

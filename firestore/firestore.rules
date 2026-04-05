@@ -1,0 +1,150 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function userDoc() {
+      return isAuthenticated()
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid))
+        : null;
+    }
+
+    function userRole() {
+      return isAuthenticated() && userDoc().data.role != null
+        ? userDoc().data.role
+        : null;
+    }
+
+    function isAdmin() {
+      return userRole() == 'admin';
+    }
+
+    function isFieldCoordinator() {
+      return userRole() == 'field_coordinator';
+    }
+
+    function isDroneOperator() {
+      return userRole() == 'drone_operator';
+    }
+
+    function isSupplier() {
+      return userRole() == 'supplier';
+    }
+
+    function isObserver() {
+      return userRole() == 'observer';
+    }
+
+    function canReadAllNonUserCollections() {
+      return isAuthenticated() && (
+        isAdmin() ||
+        isFieldCoordinator() ||
+        isDroneOperator() ||
+        isSupplier() ||
+        isObserver()
+      );
+    }
+
+    function sameUserDocument(uid) {
+      return isAuthenticated() && request.auth.uid == uid;
+    }
+
+    function onlyAcknowledgedFieldUpdated() {
+      return request.resource.data.diff(resource.data).changedKeys().hasOnly(['acknowledged']);
+    }
+
+    function supplierOwnAlert() {
+      return isSupplier() && resource.data.supplier_id == request.auth.uid;
+    }
+
+    match /users/{uid} {
+      allow read, write: if isAdmin();
+      allow read: if isAuthenticated() && sameUserDocument(uid);
+      allow update: if isAuthenticated() && sameUserDocument(uid)
+        && request.resource.data.role == resource.data.role;
+      allow create: if false;
+      allow delete: if false;
+    }
+
+    match /system-alerts/{alertId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+      allow update: if isFieldCoordinator() || isAdmin();
+    }
+
+    match /rescue-assignments/{assignmentId} {
+      allow read: if canReadAllNonUserCollections();
+      allow create, update: if isAdmin() || isFieldCoordinator();
+      allow delete: if isAdmin();
+    }
+
+    match /survivor-reports/{reportId} {
+      allow read: if canReadAllNonUserCollections();
+      allow create: if true;
+      allow update: if isAdmin() || isFieldCoordinator();
+      allow delete: if isAdmin();
+    }
+
+    match /rescue-teams/{teamId} {
+      allow read: if canReadAllNonUserCollections();
+      allow create: if isAdmin();
+      allow update: if isAdmin()
+        || (isFieldCoordinator() && sameUserDocument(teamId));
+      allow delete: if isAdmin();
+    }
+
+    match /drone-fleet/{droneId} {
+      allow read: if canReadAllNonUserCollections();
+      allow create: if isAdmin();
+      allow update: if isAdmin()
+        || (
+          isDroneOperator()
+          && resource.data.operator_uid == request.auth.uid
+          && request.resource.data.diff(resource.data).changedKeys().hasOnly([
+            'status',
+            'battery_percent',
+            'current_position',
+            'last_telemetry_at',
+            'updated_at'
+          ])
+        );
+      allow delete: if isAdmin();
+    }
+
+    match /drone-dispatches/{dispatchId} {
+      allow read: if canReadAllNonUserCollections();
+      allow write: if isAdmin();
+      allow update: if isAdmin()
+        || (
+          isDroneOperator()
+          && resource.data.operator_uid == request.auth.uid
+          && request.resource.data.diff(resource.data).changedKeys().hasOnly([
+            'status',
+            'eta_minutes',
+            'last_telemetry_at',
+            'telemetry',
+            'updated_at'
+          ])
+        );
+    }
+
+    match /inventory-alerts/{alertId} {
+      allow read: if isAdmin()
+        || isFieldCoordinator()
+        || isObserver()
+        || supplierOwnAlert();
+      allow create: if isAdmin() || isFieldCoordinator();
+      allow update: if isAdmin()
+        || (supplierOwnAlert() && onlyAcknowledgedFieldUpdated());
+      allow delete: if isAdmin();
+    }
+
+    match /{collection}/{document} {
+      allow read: if collection != 'users' && canReadAllNonUserCollections();
+      allow write: if isAdmin();
+    }
+  }
+}

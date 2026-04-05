@@ -1,0 +1,26 @@
+[
+  {
+    "sensor_id": "water-puri-01",
+    "sensor_type": "water_level",
+    "lat": 19.855,
+    "lng": 85.852,
+    "water_level_m": 2.6,
+    "timestamp": "2026-04-05T07:50:00.000Z"
+  },
+  {
+    "sensor_id": "road-pipili-01",
+    "sensor_type": "road_vibration",
+    "lat": 20.134,
+    "lng": 85.827,
+    "vibration_score": 0.92,
+    "timestamp": "2026-04-05T07:49:00.000Z"
+  },
+  {
+    "sensor_id": "wind-konark-01",
+    "sensor_type": "wind_speed",
+    "lat": 19.8876,
+    "lng": 86.0945,
+    "wind_speed_kmh": 86,
+    "timestamp": "2026-04-05T07:52:00.000Z"
+  }
+]

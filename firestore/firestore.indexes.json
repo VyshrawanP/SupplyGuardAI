@@ -1,0 +1,62 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "shipments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "updated_at", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "drone-dispatches",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "dispatched_at", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "rescue-assignments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "dispatched_at", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "system-alerts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "severity", "order": "ASCENDING" },
+        { "fieldPath": "created_at", "order": "DESCENDING" },
+        { "fieldPath": "acknowledged", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "disaster-events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "type", "order": "ASCENDING" },
+        { "fieldPath": "created_at", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "survivor-reports",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "cluster_id", "order": "ASCENDING" },
+        { "fieldPath": "timestamp", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "inventory-alerts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "created_at", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
