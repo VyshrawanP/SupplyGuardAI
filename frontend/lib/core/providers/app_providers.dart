@@ -1,8 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/app_models.dart';
+import '../services/api_service.dart';
 import '../services/firestore_service.dart';
 import '../services/offline_sync_service.dart';
+
+final apiServiceProvider = Provider<ApiService>((ref) {
+  return ApiService();
+});
 
 final firestoreServiceProvider = Provider<FirestoreService>((ref) {
   return FirestoreService();

@@ -1,8 +1,19 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-Map<String, dynamic> _mapOf(dynamic value) => value is Map<String, dynamic>
-    ? value
-    : Map<String, dynamic>.from(value as Map);
+GeoPoint _zeroPoint() => GeoPoint(0, 0);
+
+Map<String, dynamic> _mapOf(dynamic value) {
+  if (value == null) {
+    return <String, dynamic>{};
+  }
+  if (value is Map<String, dynamic>) {
+    return value;
+  }
+  if (value is Map) {
+    return Map<String, dynamic>.from(value);
+  }
+  return <String, dynamic>{};
+}
 
 List<Map<String, dynamic>> _listOfMaps(dynamic value) => value is List
     ? value.map((entry) => _mapOf(entry)).toList()
@@ -100,13 +111,13 @@ class Shipment {
         id: json['id']?.toString() ?? '',
         routeId: json['route_id']?.toString() ?? '',
         status: json['status']?.toString() ?? 'UNKNOWN',
-        currentPosition: _asGeoPoint(json['coordinates']) ?? const GeoPoint(0, 0),
-        origin: _asGeoPoint(json['origin']) ?? const GeoPoint(0, 0),
-        destination: _asGeoPoint(json['destination']) ?? const GeoPoint(0, 0),
+        currentPosition: _asGeoPoint(json['coordinates']) ?? _zeroPoint(),
+        origin: _asGeoPoint(json['origin']) ?? _zeroPoint(),
+        destination: _asGeoPoint(json['destination']) ?? _zeroPoint(),
         cargoSummary: (json['cargo_summary'] as List?)?.map((e) => e.toString()).toList() ?? const <String>[],
         currentEtaMinutes: (json['current_eta_minutes'] as num?)?.toInt() ?? 0,
         polyline: (json['polyline'] as List?)
-                ?.map((entry) => _asGeoPoint(entry) ?? const GeoPoint(0, 0))
+                ?.map((entry) => _asGeoPoint(entry) ?? _zeroPoint())
                 .toList() ??
             const <GeoPoint>[],
         driverName: json['driver_name']?.toString(),
@@ -190,7 +201,7 @@ class Drone {
         model: json['model']?.toString() ?? 'Unknown',
         status: _parseDroneStatus(json['status']?.toString()),
         batteryPercent: (json['battery_percent'] as num?)?.toDouble() ?? 0,
-        currentPosition: _asGeoPoint(json['current_position']) ?? const GeoPoint(0, 0),
+        currentPosition: _asGeoPoint(json['current_position']) ?? _zeroPoint(),
         maxPayloadKg: (json['max_payload_kg'] as num?)?.toDouble() ?? 0,
         availablePayloadKg: (json['available_payload_kg'] as num?)?.toDouble() ?? 0,
         operatorUid: json['operator_uid']?.toString(),
@@ -274,7 +285,7 @@ class DroneDispatch {
         id: json['id']?.toString() ?? json['dispatch_id']?.toString() ?? '',
         droneId: json['drone_id']?.toString() ?? '',
         status: json['status']?.toString() ?? 'UNKNOWN',
-        destination: _asGeoPoint(json['destination']) ?? const GeoPoint(0, 0),
+        destination: _asGeoPoint(json['destination']) ?? _zeroPoint(),
         etaMinutes: (json['eta_minutes'] as num?)?.toInt() ?? 0,
         payloadManifest: _listOfMaps(json['payload_manifest']),
         flightPlan: _listOfMaps(_mapOf(json['flight_plan'])['waypoints'])
@@ -321,7 +332,7 @@ class Warehouse {
         id: json['id']?.toString() ?? '',
         name: json['name']?.toString() ?? '',
         city: json['city']?.toString() ?? '',
-        location: _asGeoPoint(json['location']) ?? const GeoPoint(0, 0),
+        location: _asGeoPoint(json['location']) ?? _zeroPoint(),
         status: json['status']?.toString() ?? 'UNKNOWN',
         assignedPopulation: (json['assigned_population'] as num?)?.toInt() ?? 0,
       );
@@ -406,7 +417,7 @@ class RescueTeam {
         id: json['id']?.toString() ?? json['team_id']?.toString() ?? '',
         name: json['name']?.toString() ?? '',
         status: json['status']?.toString() ?? 'UNKNOWN',
-        currentPosition: _asGeoPoint(json['current_position']) ?? const GeoPoint(0, 0),
+        currentPosition: _asGeoPoint(json['current_position']) ?? _zeroPoint(),
         teamCapacity: (json['team_capacity'] as num?)?.toInt() ?? 0,
         roster: (json['roster'] as List?)?.map((e) => e.toString()).toList() ?? const <String>[],
       );
@@ -484,7 +495,7 @@ class SurvivorCluster {
 
   factory SurvivorCluster.fromJson(Map<String, dynamic> json) => SurvivorCluster(
         clusterId: json['cluster_id']?.toString() ?? json['id']?.toString() ?? '',
-        center: _asGeoPoint(json['center']) ?? const GeoPoint(0, 0),
+        center: _asGeoPoint(json['center']) ?? _zeroPoint(),
         estimatedPopulation: (json['estimated_population'] as num?)?.toInt() ?? 0,
         severity: (json['severity'] as num?)?.toInt() ?? 1,
         reportCount: (json['report_count'] as num?)?.toInt() ?? 0,
@@ -529,7 +540,7 @@ class SurvivorReport {
 
   factory SurvivorReport.fromJson(Map<String, dynamic> json) => SurvivorReport(
         id: json['id']?.toString() ?? '',
-        coordinates: _asGeoPoint(json['coordinates']) ?? const GeoPoint(0, 0),
+        coordinates: _asGeoPoint(json['coordinates']) ?? _zeroPoint(),
         count: (json['count'] as num?)?.toInt() ?? 1,
         severity: (json['severity'] as num?)?.toInt() ?? 1,
         description: json['description']?.toString(),
@@ -588,7 +599,7 @@ class DisasterEvent {
         id: json['id']?.toString() ?? json['event_id']?.toString() ?? '',
         type: json['type']?.toString() ?? '',
         severity: (json['severity'] as num?)?.toInt() ?? 1,
-        coordinates: _asGeoPoint(json['coordinates']) ?? const GeoPoint(0, 0),
+        coordinates: _asGeoPoint(json['coordinates']) ?? _zeroPoint(),
         affectedRadiusKm: (json['affected_radius_km'] as num?)?.toDouble() ?? 0,
         source: json['source']?.toString(),
       );
