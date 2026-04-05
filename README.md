@@ -82,7 +82,6 @@ This project explores RAG-based explainability in logistics optimization, addres
 
 - **Vyshrawan** - Backend Architecture, RAG Integration
 - **S Abul Fazal** - AI Architecture, Resource Management
-- [Add team members if any]
 
 ## License
 
