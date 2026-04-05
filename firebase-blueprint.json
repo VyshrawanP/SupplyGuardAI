@@ -1,0 +1,65 @@
+{
+  "entities": {
+    "Shipment": {
+      "title": "Shipment",
+      "description": "A logistics shipment being tracked in real-time.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "origin": { "type": "object" },
+        "destination": { "type": "object" },
+        "currentPos": { "type": "object" },
+        "status": { "type": "string", "enum": ["on-time", "delayed", "rerouted", "blocked"] },
+        "riskScore": { "type": "number" },
+        "delay": { "type": "number" },
+        "route": { "type": "object" },
+        "originalRoute": { "type": "object" },
+        "explanation": { "type": "string" },
+        "lastUpdate": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "origin", "destination", "status"]
+    },
+    "Event": {
+      "title": "Event",
+      "description": "A disaster or disruption event (flood, cyclone, road closure).",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string", "enum": ["flood", "cyclone", "road-closure", "heavy-rain"] },
+        "location": { "type": "object" },
+        "intensity": { "type": "number" },
+        "radius": { "type": "number" },
+        "active": { "type": "boolean" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "type", "location", "intensity", "active"]
+    },
+    "Alert": {
+      "title": "Alert",
+      "description": "A system-generated alert for a shipment.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "shipmentId": { "type": "string" },
+        "message": { "type": "string" },
+        "severity": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "shipmentId", "message", "severity"]
+    }
+  },
+  "firestore": {
+    "/shipments/{shipmentId}": {
+      "schema": "Shipment",
+      "description": "Real-time shipment tracking data."
+    },
+    "/events/{eventId}": {
+      "schema": "Event",
+      "description": "Active disaster and disruption events."
+    },
+    "/alerts/{alertId}": {
+      "schema": "Alert",
+      "description": "System alerts for logistics monitoring."
+    }
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "name": "SupplyGuard AI — Disaster Logistics Command System",
+  "description": "Real-time disaster response system for tracking shipments, predicting risks, and automated rerouting using Google Maps and Gemini AI.",
+  "requestFramePermissions": ["geolocation"]
+}
