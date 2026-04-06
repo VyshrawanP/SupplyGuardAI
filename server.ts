@@ -3,6 +3,9 @@ import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
+import http from "http";
+import { randomUUID } from "crypto";
+import { WebSocketServer } from "ws";
 
 dotenv.config();
 
@@ -73,7 +76,56 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
+  const server = http.createServer(app);
+
+  // Local-only WebSocket signaling for offline WebRTC meshes.
+  // The alerts themselves are relayed peer-to-peer via data channels after pairing.
+  const wss = new WebSocketServer({ server, path: "/mesh" });
+  const clients = new Map<string, import("ws").WebSocket>();
+
+  const safeSend = (socket: import("ws").WebSocket, payload: unknown) => {
+    if (socket.readyState !== socket.OPEN) return;
+    socket.send(JSON.stringify(payload));
+  };
+
+  const broadcast = (payload: unknown, exceptId?: string) => {
+    for (const [id, socket] of clients.entries()) {
+      if (exceptId && id === exceptId) continue;
+      safeSend(socket, payload);
+    }
+  };
+
+  wss.on("connection", (socket) => {
+    const id = randomUUID();
+    clients.set(id, socket);
+
+    safeSend(socket, { type: "welcome", id, peers: Array.from(clients.keys()).filter((peerId) => peerId !== id) });
+    broadcast({ type: "peer-join", id }, id);
+
+    socket.on("message", (raw) => {
+      let msg: any = null;
+      try {
+        msg = JSON.parse(String(raw));
+      } catch {
+        return;
+      }
+
+      if (!msg || typeof msg !== "object") return;
+      if (msg.type !== "signal") return;
+      if (typeof msg.to !== "string" || typeof msg.from !== "string") return;
+
+      const target = clients.get(msg.to);
+      if (!target) return;
+      safeSend(target, { type: "signal", to: msg.to, from: msg.from, payload: msg.payload ?? null });
+    });
+
+    socket.on("close", () => {
+      clients.delete(id);
+      broadcast({ type: "peer-leave", id }, id);
+    });
+  });
+
+  server.listen(PORT, "0.0.0.0", () => {
     console.log(`SupplyGuard AI Server running on http://localhost:${PORT}`);
   });
 }

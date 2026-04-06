@@ -315,7 +315,7 @@ const aiExplanations = Array.from({ length: 10 }).map((_, index) => ({
   confidence_narrative: 'Confidence remained high because weather and traffic data were fresh.',
   coordinator_guidance: 'Monitor route recovery and confirm field telemetry.',
   created_at: Timestamp.fromDate(new Date(now.getTime() - index * 86400000)),
-});
+}));
 
 function generateLifeJackets() {
   return Array.from({ length: 50 }).map((_, index) => ({

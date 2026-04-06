@@ -30,6 +30,7 @@ import { LocalityIntelligence } from './sections/LocalityIntelligence';
 import { LiveOperationsStats } from './sections/LiveOperationsStats';
 import { NotificationFeed } from './sections/NotificationFeed';
 import { StatusBadge } from './ui/StatusBadge';
+import { MeshAlertsPanel } from './sections/MeshAlertsPanel';
 
 const services = [
   {
@@ -242,6 +243,10 @@ export const Dashboard = () => {
         <section id="operations" className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
           <ServiceOrchestration missions={visibleMissions} />
           <SystemAlerts alerts={alerts} />
+        </section>
+
+        <section className="grid gap-6 lg:grid-cols-[1fr]">
+          <MeshAlertsPanel />
         </section>
 
         <section className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">

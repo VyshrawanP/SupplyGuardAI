@@ -1,4 +1,5 @@
 import { Ambulance, BellRing, Package, Plane, Shield, Users } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { OperationsStats } from '../../store/useStore';
 import { GlassCard } from '../ui/GlassCard';
 
@@ -31,7 +32,7 @@ function StatCard({
   value,
   sub,
 }: {
-  icon: React.ReactNode;
+  icon: ReactNode;
   label: string;
   value: string;
   sub: string;
