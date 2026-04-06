@@ -1,38 +1,246 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
+import L from 'leaflet';
+import { Circle, MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from 'react-leaflet';
 import {
   Ambulance,
   Building2,
-  CircleDashed,
   Package,
   Plane,
-  ShieldPlus,
-  TriangleAlert,
   Waves,
   Zap,
 } from 'lucide-react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { useStore } from '../store/useStore';
 
+type LatLng = { lat: number; lng: number };
+
+const REAL_LOCALITY_COORDS: Record<string, LatLng> = {
+  whitefield: { lat: 12.9698, lng: 77.7499 },
+  'kr-puram': { lat: 13.0077, lng: 77.6955 },
+  indiranagar: { lat: 12.9784, lng: 77.6408 },
+  'mg-road': { lat: 12.9756, lng: 77.6066 },
+  koramangala: { lat: 12.9352, lng: 77.6245 },
+  'electronic-city': { lat: 12.8456, lng: 77.6603 },
+  jayanagar: { lat: 12.9299, lng: 77.5823 },
+  rajarajeshwari: { lat: 12.9275, lng: 77.5155 },
+  hebbal: { lat: 13.0358, lng: 77.5970 },
+  yelahanka: { lat: 13.1007, lng: 77.5963 },
+};
+
+const REAL_HOSPITAL_COORDS: Record<string, LatLng> = {
+  manipal: { lat: 12.9580, lng: 77.6493 },
+  vydehi: { lat: 12.9850, lng: 77.7288 },
+  cmh: { lat: 12.9742, lng: 77.6401 },
+  'st-johns': { lat: 12.9346, lng: 77.6103 },
+  apollo: { lat: 12.8891, lng: 77.5970 },
+  bgs: { lat: 12.9031, lng: 77.5167 },
+  aster: { lat: 13.0330, lng: 77.5947 },
+  bowring: { lat: 12.9834, lng: 77.6096 },
+};
+
+const REAL_HUB_COORDS: Record<string, LatLng> = {
+  peenya: { lat: 13.0288, lng: 77.5198 },
+  hoskote: { lat: 13.0707, lng: 77.7981 },
+  bommasandra: { lat: 12.8168, lng: 77.6896 },
+};
+
+const REAL_ROUTE_PATHS: Record<string, LatLng[]> = {
+  'orr-east': [
+    { lat: 12.9698, lng: 77.7499 },
+    { lat: 12.9815, lng: 77.7360 },
+    { lat: 12.9916, lng: 77.7207 },
+    { lat: 13.0019, lng: 77.7060 },
+    { lat: 13.0077, lng: 77.6955 },
+  ],
+  'whitefield-core': [
+    { lat: 13.0077, lng: 77.6955 },
+    { lat: 13.0002, lng: 77.6763 },
+    { lat: 12.9947, lng: 77.6618 },
+    { lat: 12.9860, lng: 77.6508 },
+    { lat: 12.9784, lng: 77.6408 },
+  ],
+  'north-core': [
+    { lat: 13.1007, lng: 77.5963 },
+    { lat: 13.0759, lng: 77.5962 },
+    { lat: 13.0485, lng: 77.5967 },
+    { lat: 13.0358, lng: 77.5970 },
+    { lat: 13.0067, lng: 77.5984 },
+    { lat: 12.9893, lng: 77.6019 },
+    { lat: 12.9756, lng: 77.6066 },
+  ],
+  'core-south': [
+    { lat: 12.9756, lng: 77.6066 },
+    { lat: 12.9679, lng: 77.6116 },
+    { lat: 12.9578, lng: 77.6174 },
+    { lat: 12.9468, lng: 77.6217 },
+    { lat: 12.9352, lng: 77.6245 },
+  ],
+  'ecity-south': [
+    { lat: 12.9352, lng: 77.6245 },
+    { lat: 12.9174, lng: 77.6318 },
+    { lat: 12.9007, lng: 77.6388 },
+    { lat: 12.8796, lng: 77.6485 },
+    { lat: 12.8604, lng: 77.6562 },
+    { lat: 12.8456, lng: 77.6603 },
+  ],
+  'west-south': [
+    { lat: 12.9275, lng: 77.5155 },
+    { lat: 12.9279, lng: 77.5360 },
+    { lat: 12.9287, lng: 77.5534 },
+    { lat: 12.9294, lng: 77.5675 },
+    { lat: 12.9299, lng: 77.5823 },
+  ],
+};
+
 const servicePalette: Record<string, string> = {
-  ambulance: 'rgba(248, 113, 113, 0.95)',
-  drone: 'rgba(56, 189, 248, 0.95)',
-  food: 'rgba(250, 204, 21, 0.92)',
-  rescue: 'rgba(251, 146, 60, 0.95)',
-  evacuation: 'rgba(196, 181, 253, 0.95)',
-  utility: 'rgba(52, 211, 153, 0.95)',
+  ambulance: '#f87171',
+  drone: '#38bdf8',
+  food: '#facc15',
+  rescue: '#fb923c',
+  evacuation: '#c4b5fd',
+  utility: '#34d399',
 };
 
 const routeColor = (status: string) => {
   if (status === 'blocked') {
-    return 'rgba(248, 113, 113, 0.9)';
+    return '#ef4444';
   }
   if (status === 'restricted') {
-    return 'rgba(251, 146, 60, 0.9)';
+    return '#f97316';
   }
   if (status === 'slow') {
-    return 'rgba(250, 204, 21, 0.85)';
+    return '#facc15';
   }
-  return 'rgba(96, 165, 250, 0.78)';
+  return '#60a5fa';
 };
+
+const mapPointToBengaluru = (point: { lat: number; lng: number }): LatLng => {
+  const lat = 13.139 - (point.lat / 100) * (13.139 - 12.835);
+  const lng = 77.460 + (point.lng / 100) * (77.782 - 77.460);
+  return { lat, lng };
+};
+
+const interpolatePoint = (from: LatLng, to: LatLng, t: number): LatLng => ({
+  lat: from.lat + (to.lat - from.lat) * t,
+  lng: from.lng + (to.lng - from.lng) * t,
+});
+
+const progressBetween = (
+  start: { lat: number; lng: number },
+  end: { lat: number; lng: number },
+  point: { lat: number; lng: number },
+) => {
+  const dx = end.lng - start.lng;
+  const dy = end.lat - start.lat;
+  const lengthSquared = dx * dx + dy * dy;
+  if (lengthSquared === 0) {
+    return 0;
+  }
+
+  const t = ((point.lng - start.lng) * dx + (point.lat - start.lat) * dy) / lengthSquared;
+  return Math.max(0, Math.min(1, t));
+};
+
+const routePathFor = (routeId: string, from: LatLng, to: LatLng) => REAL_ROUTE_PATHS[routeId] ?? [from, to];
+
+const riskRadiusMeters = (riskScore: number) => Math.max(450, riskScore * 28);
+
+const iconForService = (service: string) => {
+  switch (service) {
+    case 'ambulance':
+      return Ambulance;
+    case 'drone':
+      return Plane;
+    case 'food':
+      return Package;
+    case 'utility':
+      return Zap;
+    default:
+      return Waves;
+  }
+};
+
+const divMarkerIcon = (html: string, className: string, size: [number, number], anchor: [number, number]) =>
+  L.divIcon({
+    html,
+    className,
+    iconSize: size,
+    iconAnchor: anchor,
+  });
+
+const localityMarkerIcon = (tone: string, label: string) =>
+  divMarkerIcon(
+    `<div style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:999px;border:1px solid rgba(255,255,255,0.85);background:${tone};box-shadow:0 10px 24px rgba(2,8,23,0.35);font-size:10px;font-weight:700;color:#020617;">${label}</div>`,
+    'leaflet-locality-marker',
+    [32, 32],
+    [16, 16],
+  );
+
+const hubMarkerIcon = () =>
+  divMarkerIcon(
+    '<div style="display:flex;align-items:center;justify-content:center;min-width:46px;height:28px;padding:0 10px;border-radius:14px;border:1px solid rgba(255,255,255,0.82);background:#67e8f9;color:#082f49;font-size:10px;font-weight:700;letter-spacing:0.08em;box-shadow:0 10px 24px rgba(2,8,23,0.3);">HUB</div>',
+    'leaflet-hub-marker',
+    [46, 28],
+    [23, 14],
+  );
+
+const hospitalMarkerIcon = (color: string) =>
+  divMarkerIcon(
+    `<div style="display:flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:999px;border:3px solid white;background:${color};box-shadow:0 10px 24px rgba(2,8,23,0.32);"></div>`,
+    'leaflet-hospital-marker',
+    [22, 22],
+    [11, 11],
+  );
+
+const fleetMarkerIcon = (service: string) => {
+  const Icon = iconForService(service);
+  return divMarkerIcon(
+    renderToStaticMarkup(
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: 32,
+          height: 32,
+          borderRadius: 999,
+          border: '1px solid rgba(255,255,255,0.82)',
+          background: servicePalette[service] ?? '#e2e8f0',
+          boxShadow: '0 10px 24px rgba(2,8,23,0.35)',
+        }}
+      >
+        <Icon size={16} color="#020617" />
+      </div>,
+    ),
+    'leaflet-fleet-marker',
+    [32, 32],
+    [16, 16],
+  );
+};
+
+function MapViewport({ center }: { center: LatLng }) {
+  const map = useMap();
+  map.setView(center, 11.5, { animate: true });
+  return null;
+}
+
+function InfoContent({
+  title,
+  subtitle,
+  body,
+}: {
+  title: string;
+  subtitle: string;
+  body: string;
+}) {
+  return (
+    <div className="max-w-[240px] text-slate-900">
+      <h4 className="text-sm font-semibold">{title}</h4>
+      <p className="text-xs font-medium text-slate-600">{subtitle}</p>
+      <p className="mt-1 text-xs">{body}</p>
+    </div>
+  );
+}
 
 export const Map: React.FC = () => {
   const {
@@ -51,6 +259,8 @@ export const Map: React.FC = () => {
     selectedStressDecisionId,
   } = useStore();
 
+  const [activeMarkerId, setActiveMarkerId] = useState<string | null>(null);
+
   const selectedLocality = localities.find((item) => item.id === selectedLocalityId) ?? localities[0];
   const selectedMissions = missions.filter((mission) => mission.localityId === selectedLocality.id);
   const selectedFleet = fleet.filter((unit) => unit.localityId === selectedLocality.id);
@@ -60,173 +270,276 @@ export const Map: React.FC = () => {
   const activeRouteIds = new Set([...(selectedTimeline?.routeIds ?? []), ...(selectedDecision?.routeIds ?? [])]);
   const activeHospitalIds = new Set([...(selectedTimeline?.hospitalIds ?? []), ...(selectedDecision?.hospitalIds ?? [])]);
 
-  const findLocality = (id: string) => localities.find((item) => item.id === id);
+  const localityLookup = useMemo(
+    () => new globalThis.Map(localities.map((locality) => [locality.id, REAL_LOCALITY_COORDS[locality.id] ?? mapPointToBengaluru(locality.position)])),
+    [localities],
+  );
+  const hospitalLookup = useMemo(
+    () => new globalThis.Map(hospitals.map((hospital) => [hospital.id, REAL_HOSPITAL_COORDS[hospital.id] ?? mapPointToBengaluru(hospital.position)])),
+    [hospitals],
+  );
+  const hubLookup = useMemo(
+    () => new globalThis.Map(hubs.map((hub) => [hub.id, REAL_HUB_COORDS[hub.id] ?? mapPointToBengaluru(hub.position)])),
+    [hubs],
+  );
+
+  const center = useMemo(
+    () => localityLookup.get(selectedLocality.id) ?? { lat: 12.9716, lng: 77.5946 },
+    [localityLookup, selectedLocality.id],
+  );
 
   return (
     <div className="map-shell relative overflow-hidden rounded-[28px] border border-white/10 lg:rounded-[36px]">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.08),transparent_28%),radial-gradient(circle_at_top_right,rgba(56,189,248,0.14),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(251,146,60,0.12),transparent_28%)]" />
-      <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.02),transparent_30%,rgba(255,255,255,0.02))]" />
 
       <div className="relative h-[420px] sm:h-[520px] lg:h-[860px]">
-      <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full">
-        <defs>
-          <linearGradient id="cityFill" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="rgba(34,197,94,0.08)" />
-            <stop offset="45%" stopColor="rgba(56,189,248,0.16)" />
-            <stop offset="100%" stopColor="rgba(251,146,60,0.08)" />
-          </linearGradient>
-          <pattern id="map-grid" width="5" height="5" patternUnits="userSpaceOnUse">
-            <path d="M 5 0 L 0 0 0 5" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="0.18" />
-          </pattern>
-          <pattern id="terrain" width="14" height="14" patternUnits="userSpaceOnUse">
-            <path d="M 0 7 Q 3 4 7 7 T 14 7" fill="none" stroke="rgba(255,255,255,0.025)" strokeWidth="0.24" />
-          </pattern>
-        </defs>
+        <MapContainer
+          center={[center.lat, center.lng]}
+          zoom={11.5}
+          scrollWheelZoom
+          className="h-full w-full"
+        >
+          <MapViewport center={center} />
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
 
-        <rect width="100" height="100" fill="url(#map-grid)" />
-        <rect width="100" height="100" fill="url(#terrain)" />
-        <path
-          d="M14,18 L29,8 L53,10 L71,16 L84,29 L90,49 L83,74 L67,90 L42,93 L24,86 L12,68 L9,44 Z"
-          fill="url(#cityFill)"
-          stroke="rgba(125,211,252,0.4)"
-          strokeWidth="0.45"
-        />
-        <path d="M15,18 L30,15 L46,17 L59,15 L74,20 L83,31 L86,45 L81,58 L75,69 L64,82 L47,88 L28,84 L17,73 L13,59 L12,42 Z" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="0.35" />
-        <path d="M22,24 L35,22 L47,25 L61,22 L73,27 L78,39 L76,51 L67,62 L54,70 L37,69 L24,62 L18,51 L19,38 Z" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="0.28" />
-        <path d="M8,36 C18,35 25,40 32,45 C42,52 50,55 59,53 C69,50 78,54 91,63" fill="none" stroke="rgba(34,197,94,0.16)" strokeWidth="0.8" />
-        <path d="M10,61 C21,57 29,62 39,68 C49,74 59,74 70,70 C79,66 86,67 92,70" fill="none" stroke="rgba(56,189,248,0.12)" strokeWidth="0.6" />
-        <path d="M61,78 C66,73 68,66 66,58 C64,50 67,44 74,39 C78,36 80,30 80,24" fill="none" stroke="rgba(56,189,248,0.22)" strokeWidth="1.2" />
-        <path d="M24,18 C26,27 29,33 34,39" fill="none" stroke="rgba(56,189,248,0.18)" strokeWidth="0.9" />
-        <path d="M18,27 C35,30 56,30 79,22" stroke="rgba(255,255,255,0.08)" strokeWidth="0.9" fill="none" strokeDasharray="2 2" />
-        <path d="M17,48 C42,41 56,48 80,59" stroke="rgba(255,255,255,0.08)" strokeWidth="1" fill="none" strokeDasharray="2 2" />
-        <path d="M28,84 C34,66 44,41 58,14" stroke="rgba(255,255,255,0.07)" strokeWidth="0.8" fill="none" strokeDasharray="2 3" />
-        <path d="M18,19 L22,19 L24,17 L29,16 L33,14 L37,15 L42,15 L48,14 L55,14 L60,16 L67,17 L73,19 L78,24 L82,28 L84,33" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="0.25" />
+          {routes.map((route) => {
+            const from = localityLookup.get(route.from);
+            const to = localityLookup.get(route.to);
+            if (!from || !to) {
+              return null;
+            }
 
-        {routes.map((route) => {
-          const from = findLocality(route.from);
-          const to = findLocality(route.to);
-          if (!from || !to) {
-            return null;
-          }
-          return (
-            <path
-              key={route.id}
-              d={`M ${from.position.lng} ${from.position.lat} Q ${(from.position.lng + to.position.lng) / 2} ${((from.position.lat + to.position.lat) / 2) - 4} ${to.position.lng} ${to.position.lat}`}
-              stroke={routeColor(route.status)}
-              strokeWidth={activeRouteIds.has(route.id) ? '2.2' : route.status === 'blocked' ? '1.8' : '1.3'}
-              fill="none"
-              strokeDasharray={route.status === 'open' ? '0' : '3 2'}
-              strokeOpacity={activeRouteIds.size === 0 || activeRouteIds.has(route.id) ? 1 : 0.28}
-            />
-          );
-        })}
+            const routePath = routePathFor(route.id, from, to);
 
-        {missions.slice(0, 20).map((mission) => {
-          const locality = findLocality(mission.localityId);
-          const hub = hubs.find((item) => item.id === mission.originId);
-          if (!locality || !hub) {
-            return null;
-          }
-          const motionPath = `M ${hub.position.lng} ${hub.position.lat} C ${hub.position.lng + 8} ${hub.position.lat - 6}, ${locality.position.lng - 6} ${locality.position.lat + 6}, ${locality.position.lng} ${locality.position.lat}`;
-          return (
-            <g key={mission.id}>
-              <path
-                d={motionPath}
-                stroke={servicePalette[mission.service]}
-                strokeWidth="0.9"
-                fill="none"
-                strokeOpacity="0.72"
-                strokeDasharray="2.5 2"
+            return (
+              <Polyline
+                key={route.id}
+                positions={routePath.map((point) => [point.lat, point.lng])}
+                pathOptions={{
+                  color: routeColor(route.status),
+                  weight: activeRouteIds.has(route.id) ? 6 : route.status === 'blocked' ? 5 : 4,
+                  opacity: activeRouteIds.size === 0 || activeRouteIds.has(route.id) ? 0.95 : 0.32,
+                }}
               />
-              <circle r={mission.service === 'drone' ? '0.6' : '0.75'} fill={servicePalette[mission.service]} opacity="0.95">
-                <animateMotion dur={`${Math.max(4, Math.min(14, mission.etaMinutes / 5))}s`} repeatCount="indefinite" rotate="auto">
-                  <mpath href={`#motion-${mission.id}`} />
-                </animateMotion>
-              </circle>
-              <path id={`motion-${mission.id}`} d={motionPath} fill="none" stroke="none" />
-            </g>
-          );
-        })}
+            );
+          })}
 
-        {localities.map((locality) => (
-          <g key={locality.id} onClick={() => selectLocality(locality.id)} className="cursor-pointer">
-            <circle
-              cx={locality.position.lng}
-              cy={locality.position.lat}
-              r={Math.max(4, locality.riskScore / 17)}
-              fill={activeLocalityIds.has(locality.id)
-                ? 'rgba(56,189,248,0.28)'
-                : locality.supportPressure === 'critical'
-                  ? 'rgba(248,113,113,0.24)'
-                  : locality.supportPressure === 'strained'
-                    ? 'rgba(251,146,60,0.18)'
-                    : 'rgba(74,222,128,0.14)'}
-            />
-            <circle
-              cx={locality.position.lng}
-              cy={locality.position.lat}
-              r={locality.id === selectedLocality.id ? 2.5 : 1.8}
-              fill={locality.supportPressure === 'critical' ? 'rgba(251,113,133,0.95)' : locality.supportPressure === 'strained' ? 'rgba(251,146,60,0.95)' : 'rgba(74,222,128,0.95)'}
-              stroke="rgba(255,255,255,0.92)"
-              strokeWidth="0.35"
-            />
-          </g>
-        ))}
+          {missions.slice(0, 20).map((mission) => {
+            const start = hubLookup.get(mission.originId);
+            const end = localityLookup.get(mission.localityId);
+            if (!start || !end) {
+              return null;
+            }
 
-        {hospitals.map((hospital) => (
-          <g key={hospital.id}>
-            <rect
-              x={hospital.position.lng - 1.1}
-              y={hospital.position.lat - 1.1}
-              width="2.2"
-              height="2.2"
-              rx="0.48"
-              fill="rgba(255,255,255,0.88)"
-              opacity={activeHospitalIds.size === 0 || activeHospitalIds.has(hospital.id) ? 1 : 0.35}
-            />
-            <path
-              d={`M ${hospital.position.lng} ${hospital.position.lat - 1.9} L ${hospital.position.lng} ${hospital.position.lat + 1.9} M ${hospital.position.lng - 1.9} ${hospital.position.lat} L ${hospital.position.lng + 1.9} ${hospital.position.lat}`}
-              stroke={activeHospitalIds.has(hospital.id)
-                ? 'rgba(56,189,248,0.95)'
-                : hospital.status === 'critical'
-                  ? 'rgba(248,113,113,0.95)'
-                  : hospital.status === 'surge'
-                    ? 'rgba(251,146,60,0.95)'
-                    : 'rgba(74,222,128,0.92)'}
-              strokeWidth={activeHospitalIds.has(hospital.id) ? '0.7' : '0.45'}
-            />
-          </g>
-        ))}
+            const missionRoute = [
+              start,
+              interpolatePoint(start, end, 0.28),
+              interpolatePoint(start, end, 0.62),
+              end,
+            ];
 
-        {hubs.map((hub) => (
-          <polygon
-            key={hub.id}
-            points={`${hub.position.lng},${hub.position.lat - 1.8} ${hub.position.lng + 1.8},${hub.position.lat} ${hub.position.lng},${hub.position.lat + 1.8} ${hub.position.lng - 1.8},${hub.position.lat}`}
-            fill="rgba(125,211,252,0.95)"
-          />
-        ))}
+            return (
+              <Polyline
+                key={mission.id}
+                positions={missionRoute.map((point) => [point.lat, point.lng])}
+                pathOptions={{
+                  color: servicePalette[mission.service] ?? '#e2e8f0',
+                  weight: mission.priority === 'critical' ? 3.5 : 2,
+                  opacity: mission.priority === 'critical' ? 0.95 : 0.55,
+                }}
+              />
+            );
+          })}
 
-        {fleet.map((unit) => (
-          <circle
-            key={unit.id}
-            cx={unit.position.lng}
-            cy={unit.position.lat}
-            r={unit.service === 'drone' ? 0.9 : 1.1}
-            fill={servicePalette[unit.service]}
-            stroke="rgba(255,255,255,0.75)"
-            strokeWidth="0.24"
-          />
-        ))}
-      </svg>
+          {localities.map((locality) => {
+            const position = localityLookup.get(locality.id);
+            if (!position) {
+              return null;
+            }
 
-      <div className="absolute left-4 bottom-4 z-20 hidden flex-wrap gap-3 lg:left-6 lg:bottom-6 lg:flex">
-        <div className="legend-chip"><Waves className="h-4 w-4 text-cyan-300" /><span>Flood layer</span></div>
-        <div className="legend-chip"><Building2 className="h-4 w-4 text-emerald-300" /><span>Hospitals</span></div>
-        <div className="legend-chip"><Ambulance className="h-4 w-4 text-rose-300" /><span>Ambulance flow</span></div>
-        <div className="legend-chip"><Plane className="h-4 w-4 text-sky-300" /><span>Drone sorties</span></div>
-        <div className="legend-chip"><Package className="h-4 w-4 text-yellow-300" /><span>Food convoys</span></div>
-        <div className="legend-chip"><Zap className="h-4 w-4 text-emerald-300" /><span>Utility restore</span></div>
-      </div>
+            const tone = activeLocalityIds.has(locality.id)
+              ? '#38bdf8'
+              : locality.supportPressure === 'critical'
+                ? '#fb7185'
+                : locality.supportPressure === 'strained'
+                  ? '#fb923c'
+                  : '#4ade80';
+
+            return (
+              <React.Fragment key={locality.id}>
+                <Circle
+                  center={[position.lat, position.lng]}
+                  radius={riskRadiusMeters(locality.riskScore)}
+                  pathOptions={{
+                    color: tone,
+                    fillColor: tone,
+                    fillOpacity: activeLocalityIds.has(locality.id) ? 0.2 : 0.12,
+                    opacity: 0.75,
+                    weight: 2,
+                  }}
+                />
+                <Marker
+                  position={[position.lat, position.lng]}
+                  icon={localityMarkerIcon(tone, String(Math.round(locality.riskScore / 10)))}
+                  eventHandlers={{
+                    click: () => {
+                      selectLocality(locality.id);
+                      setActiveMarkerId(`locality-${locality.id}`);
+                    },
+                  }}
+                >
+                  {activeMarkerId === `locality-${locality.id}` ? (
+                    <Popup
+                      closeButton
+                      eventHandlers={{
+                        remove: () => setActiveMarkerId(null),
+                      }}
+                    >
+                      <InfoContent
+                        title={locality.name}
+                        subtitle={`${locality.zone} Bengaluru`}
+                        body={`Risk ${locality.riskScore}% • accessibility ${locality.accessibility}% • affected ${locality.affectedPopulation.toLocaleString()}`}
+                      />
+                    </Popup>
+                  ) : null}
+                </Marker>
+              </React.Fragment>
+            );
+          })}
+
+          {hospitals.map((hospital) => {
+            const position = hospitalLookup.get(hospital.id);
+            if (!position) {
+              return null;
+            }
+
+            const color = activeHospitalIds.has(hospital.id)
+              ? '#38bdf8'
+              : hospital.status === 'critical'
+                ? '#ef4444'
+                : hospital.status === 'surge'
+                  ? '#f97316'
+                  : '#22c55e';
+
+            return (
+              <Marker
+                key={hospital.id}
+                position={[position.lat, position.lng]}
+                icon={hospitalMarkerIcon(color)}
+                eventHandlers={{
+                  click: () => setActiveMarkerId(`hospital-${hospital.id}`),
+                }}
+              >
+                {activeMarkerId === `hospital-${hospital.id}` ? (
+                  <Popup eventHandlers={{ remove: () => setActiveMarkerId(null) }}>
+                    <InfoContent
+                      title={hospital.name}
+                      subtitle={`Hospital • ${hospital.status}`}
+                      body={`Occupancy ${hospital.occupancy}% • medicine ${hospital.medicineStock}% • incoming ${hospital.incomingPatients}`}
+                    />
+                  </Popup>
+                ) : null}
+              </Marker>
+            );
+          })}
+
+          {hubs.map((hub) => {
+            const position = hubLookup.get(hub.id);
+            if (!position) {
+              return null;
+            }
+
+            return (
+              <Marker
+                key={hub.id}
+                position={[position.lat, position.lng]}
+                icon={hubMarkerIcon()}
+                eventHandlers={{
+                  click: () => setActiveMarkerId(`hub-${hub.id}`),
+                }}
+              >
+                {activeMarkerId === `hub-${hub.id}` ? (
+                  <Popup eventHandlers={{ remove: () => setActiveMarkerId(null) }}>
+                    <InfoContent
+                      title={hub.name}
+                      subtitle="Relief Hub"
+                      body={`Stock ${hub.stock} • fleet ${hub.fleet}`}
+                    />
+                  </Popup>
+                ) : null}
+              </Marker>
+            );
+          })}
+
+          {fleet.map((unit) => {
+            const hub = hubs.find((item) => item.id === (missions.find((mission) => mission.service === unit.service && mission.localityId === unit.localityId)?.originId ?? ''));
+            const locality = localities.find((item) => item.id === unit.localityId);
+            const realHub = hub ? hubLookup.get(hub.id) : null;
+            const realLocality = locality ? localityLookup.get(locality.id) : null;
+            const sourceHubPoint = hub?.position;
+            const sourceLocalityPoint = locality?.position;
+
+            const position =
+              realHub && realLocality && sourceHubPoint && sourceLocalityPoint
+                ? interpolatePoint(
+                    realHub,
+                    realLocality,
+                    progressBetween(sourceHubPoint, sourceLocalityPoint, unit.position),
+                  )
+                : mapPointToBengaluru(unit.position);
+
+            return (
+              <Marker
+                key={unit.id}
+                position={[position.lat, position.lng]}
+                icon={fleetMarkerIcon(unit.service)}
+                eventHandlers={{
+                  click: () => setActiveMarkerId(`fleet-${unit.id}`),
+                }}
+              >
+                {activeMarkerId === `fleet-${unit.id}` ? (
+                  <Popup eventHandlers={{ remove: () => setActiveMarkerId(null) }}>
+                    <InfoContent
+                      title={unit.name}
+                      subtitle={`${unit.service} • ${unit.status}`}
+                      body={`Readiness ${unit.readiness}% • fuel/battery ${unit.batteryOrFuel}% • ETA ${unit.etaMinutes}m`}
+                    />
+                  </Popup>
+                ) : null}
+              </Marker>
+            );
+          })}
+        </MapContainer>
+
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-[500] bg-gradient-to-b from-slate-950/70 via-slate-950/20 to-transparent p-4 lg:p-6">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="max-w-2xl rounded-2xl border border-white/10 bg-slate-950/78 px-4 py-3 backdrop-blur-xl">
+              <p className="text-[11px] uppercase tracking-[0.36em] text-cyan-200/80">Live Bengaluru street map</p>
+              <h3 className="mt-2 text-xl font-semibold text-white">Disaster management simulation on OpenStreetMap</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-300">{aiBriefing.summary}</p>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <div className="rounded-2xl border border-white/10 bg-slate-950/78 px-4 py-3 text-sm text-slate-200 backdrop-blur-xl">
+                Mode: <span className="font-semibold text-white">{settings.disasterMode}</span>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-slate-950/78 px-4 py-3 text-sm text-slate-200 backdrop-blur-xl">
+                Focus: <span className="font-semibold text-white">{selectedLocality.name}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="absolute left-4 bottom-4 z-[500] hidden flex-wrap gap-3 lg:left-6 lg:bottom-6 lg:flex">
+          <div className="legend-chip"><Waves className="h-4 w-4 text-cyan-300" /><span>Flood/risk radius</span></div>
+          <div className="legend-chip"><Building2 className="h-4 w-4 text-emerald-300" /><span>Hospitals</span></div>
+          <div className="legend-chip"><Ambulance className="h-4 w-4 text-rose-300" /><span>Ambulance flow</span></div>
+          <div className="legend-chip"><Plane className="h-4 w-4 text-sky-300" /><span>Drone sorties</span></div>
+          <div className="legend-chip"><Package className="h-4 w-4 text-yellow-300" /><span>Food convoys</span></div>
+          <div className="legend-chip"><Zap className="h-4 w-4 text-emerald-300" /><span>Utility restore</span></div>
+        </div>
       </div>
 
       <div className="grid gap-4 border-t border-white/8 bg-slate-950/70 p-4 lg:grid-cols-[1.1fr_0.9fr] lg:p-6">
@@ -234,128 +547,39 @@ export const Map: React.FC = () => {
           <div className="rounded-[24px] border border-white/10 bg-slate-950/82 p-4 backdrop-blur-xl">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p className="text-[11px] uppercase tracking-[0.36em] text-cyan-200/80">NEOFETCH by Vyshrawan Abul</p>
-                <h3 className="mt-2 text-xl font-semibold text-white">AI disaster command surface for Bengaluru</h3>
+                <p className="text-[11px] uppercase tracking-[0.36em] text-cyan-200/80">OpenStreetMap mode</p>
+                <h3 className="mt-2 text-xl font-semibold text-white">Bengaluru street operations</h3>
               </div>
               <span className="rounded-full bg-cyan-500/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-100">
                 {aiBriefing.confidence}% confidence
               </span>
             </div>
-            <p className="mt-3 text-sm leading-6 text-slate-300">{aiBriefing.summary}</p>
-            <div className="mt-4 flex flex-wrap gap-3">
-              <div className="legend-chip"><Waves className="h-4 w-4 text-cyan-300" /><span>Flood layer</span></div>
-              <div className="legend-chip"><Building2 className="h-4 w-4 text-emerald-300" /><span>Hospitals</span></div>
-              <div className="legend-chip"><Ambulance className="h-4 w-4 text-rose-300" /><span>Ambulance flow</span></div>
-              <div className="legend-chip"><Plane className="h-4 w-4 text-sky-300" /><span>Drone sorties</span></div>
-            </div>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-[24px] border border-white/10 bg-slate-950/82 p-4 backdrop-blur-xl">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-[11px] uppercase tracking-[0.3em] text-slate-400">Selected locality</p>
-                  <h3 className="mt-2 text-xl font-semibold text-white">{selectedLocality.name}</h3>
-                  <p className="mt-1 text-sm text-slate-300">{selectedLocality.zone} Bengaluru</p>
-                </div>
-                <span className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${
-                  selectedLocality.supportPressure === 'critical'
-                    ? 'bg-rose-500/15 text-rose-100'
-                    : selectedLocality.supportPressure === 'strained'
-                      ? 'bg-orange-500/15 text-orange-100'
-                      : 'bg-emerald-500/15 text-emerald-100'
-                }`}>
-                  {selectedLocality.supportPressure}
-                </span>
-              </div>
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                <div className="map-stat"><span>Risk</span><strong>{selectedLocality.riskScore}%</strong></div>
-                <div className="map-stat"><span>Access</span><strong>{selectedLocality.accessibility}%</strong></div>
-                <div className="map-stat"><span>Water</span><strong>{selectedLocality.waterDepth} cm</strong></div>
-                <div className="map-stat"><span>Evac</span><strong>{selectedLocality.evacDemand}</strong></div>
-              </div>
-            </div>
-
-            <div className="rounded-[24px] border border-white/10 bg-white/5 p-4">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-semibold text-white">Street-view style preview</p>
-                <span className="rounded-full border border-white/10 px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-slate-300">
-                  Offline mock
-                </span>
-              </div>
-              <div className="street-preview mt-4">
-                <div className="street-preview__sky" />
-                <div className="street-preview__buildings" />
-                <div className="street-preview__road" />
-                <div className="street-preview__label">{selectedLocality.name} corridor</div>
-              </div>
-            </div>
+            <p className="mt-3 text-sm leading-6 text-slate-300">
+              The simulation engine still drives the scenario, but the map now runs on OpenStreetMap tiles and Leaflet overlays for a simpler, key-free local development flow.
+            </p>
           </div>
         </div>
 
-        <div className="grid gap-4">
+        <div className="grid gap-4 md:grid-cols-2">
           <div className="rounded-[24px] border border-white/10 bg-slate-950/82 p-4 backdrop-blur-xl">
-            <div className="flex items-center gap-2 text-sm font-medium text-white">
-              <ShieldPlus className="h-4 w-4 text-cyan-300" />
-              Live simulation stack
-            </div>
-            <div className="mt-4 space-y-3">
-              {selectedMissions.slice(0, 4).map((mission) => (
-                <div key={mission.id} className="rounded-2xl border border-white/10 bg-white/5 p-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-semibold text-white">{mission.title}</p>
-                    <span className={`rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${
-                      mission.priority === 'critical'
-                        ? 'bg-rose-500/15 text-rose-100'
-                        : mission.priority === 'priority'
-                          ? 'bg-orange-500/15 text-orange-100'
-                          : 'bg-slate-500/20 text-slate-200'
-                    }`}>
-                      {mission.status}
-                    </span>
-                  </div>
-                  <p className="mt-2 text-sm leading-6 text-slate-300">{mission.narrative}</p>
-                </div>
-              ))}
+            <p className="text-[11px] uppercase tracking-[0.3em] text-slate-400">Selected locality</p>
+            <h3 className="mt-2 text-xl font-semibold text-white">{selectedLocality.name}</h3>
+            <p className="mt-1 text-sm text-slate-300">{selectedLocality.zone} Bengaluru</p>
+            <div className="mt-3 space-y-2 text-sm text-slate-300">
+              <p>Risk: <span className="font-semibold text-white">{selectedLocality.riskScore}%</span></p>
+              <p>Accessibility: <span className="font-semibold text-white">{selectedLocality.accessibility}%</span></p>
+              <p>Affected population: <span className="font-semibold text-white">{selectedLocality.affectedPopulation.toLocaleString()}</span></p>
             </div>
           </div>
 
           <div className="rounded-[24px] border border-white/10 bg-slate-950/82 p-4 backdrop-blur-xl">
-            <div className="flex items-center gap-2 text-sm font-medium text-white">
-              <CircleDashed className="h-4 w-4 text-cyan-300" />
-              Assets in motion
+            <p className="text-[11px] uppercase tracking-[0.3em] text-slate-400">Active response</p>
+            <h3 className="mt-2 text-xl font-semibold text-white">{selectedMissions.length} mission threads</h3>
+            <div className="mt-3 space-y-2 text-sm text-slate-300">
+              <p>Fleet units nearby: <span className="font-semibold text-white">{selectedFleet.length}</span></p>
+              <p>Critical routes highlighted: <span className="font-semibold text-white">{activeRouteIds.size || routes.filter((route) => route.status !== 'open').length}</span></p>
+              <p>Hospitals in focus: <span className="font-semibold text-white">{activeHospitalIds.size || selectedLocality.hospitalIds.length}</span></p>
             </div>
-            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {selectedFleet.slice(0, 4).map((unit) => (
-                <div key={unit.id} className="map-stat">
-                  <span>{unit.name}</span>
-                  <strong>{unit.etaMinutes ? `${unit.etaMinutes} min` : 'Standby'}</strong>
-                  <small className="text-xs text-slate-400">{unit.status}</small>
-                </div>
-              ))}
-            </div>
-            {selectedFleet.length === 0 && (
-              <div className="mt-4 rounded-2xl border border-dashed border-white/10 p-4 text-sm text-slate-400">
-                No moving units are attached to this locality right now. Increase severity to trigger more autonomous responses.
-              </div>
-            )}
-          </div>
-
-          <div className="rounded-[24px] border border-white/10 bg-slate-950/82 p-4 text-xs text-slate-300 backdrop-blur-xl">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <span className="uppercase tracking-[0.2em] text-slate-400">Map context</span>
-              <span>Mode {settings.disasterMode} | Water {settings.waterLevel}% | Quake {settings.earthquakeLevel}%</span>
-            </div>
-            <div className="mt-3 flex flex-wrap items-center gap-3">
-              <span className="text-slate-500">Scale</span>
-              <span className="h-px w-12 bg-white/60" />
-              <span>5 km</span>
-              <span className="rounded-full border border-white/10 px-2 py-1 text-white">N</span>
-              <span>Animated mission paths</span>
-            </div>
-            <p className="mt-3 leading-6 text-slate-400">
-              Increase flood or earthquake intensity and the system will immediately shift service allocations, route health, and hospital pressure across Bengaluru localities.
-            </p>
           </div>
         </div>
       </div>

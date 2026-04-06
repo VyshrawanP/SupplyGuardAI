@@ -111,12 +111,12 @@ export const Dashboard = () => {
   ]));
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#040b14_0%,#071220_48%,#0a1520_100%)] text-white">
-      <header className="sticky top-0 z-50 border-b border-white/8 bg-slate-950/70 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-4 px-4 py-4 lg:px-6">
+    <div className="dashboard-shell min-h-screen bg-[linear-gradient(180deg,#050b12_0%,#09131b_42%,#0e1820_100%)] text-white">
+      <header className="sticky top-0 z-50 border-b border-white/8 bg-slate-950/55 backdrop-blur-2xl">
+        <div className="mx-auto flex max-w-[1480px] items-center justify-between gap-4 px-4 py-4 lg:px-8">
           <div>
-            <p className="text-[11px] uppercase tracking-[0.35em] text-cyan-200/80">@NEOFETCH by Vyshrawan Abul</p>
-            <h1 className="mt-1 text-lg font-semibold text-white">SupplyGuard AI</h1>
+            <p className="text-[11px] uppercase tracking-[0.35em] text-cyan-200/80">SupplyGuard AI</p>
+            <h1 className="mt-1 text-lg font-semibold text-white">Bengaluru Command Console</h1>
           </div>
           <nav className="hidden items-center gap-6 text-sm text-slate-300 md:flex">
             <a href="#overview" className="hover:text-white">Overview</a>
@@ -125,34 +125,36 @@ export const Dashboard = () => {
             <a href="#impact" className="hover:text-white">Impact</a>
           </nav>
           <div className="flex items-center gap-3">
-            <div className="hidden rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-300 sm:flex">
+            <div className="hidden rounded-full border border-white/10 bg-slate-950/55 px-3 py-2 text-xs text-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] sm:flex">
               <Wifi className="mr-2 h-3.5 w-3.5 text-cyan-300" />
               Signal {signalQuality}% {signalLabel}
             </div>
-            <a href="#simulation" className="rounded-full bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300">
-              Open Simulation
+            <a href="#simulation" className="rounded-full bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200">
+              Open Command Map
             </a>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto flex max-w-[1440px] flex-col gap-5 px-4 py-5 lg:px-6 lg:py-6">
-        <section id="overview" className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
-          <div className="panel-surface rounded-[32px] p-6 lg:p-8">
+      <main className="mx-auto flex max-w-[1480px] flex-col gap-6 px-4 py-6 lg:px-8 lg:py-8">
+        <section id="overview" className="grid gap-6 xl:grid-cols-[1.18fr_0.82fr]">
+          <div className="panel-surface rounded-[36px] p-6 lg:p-8">
             <BrandHero />
-            <div className="mt-5 flex flex-wrap gap-3">
-              <a href="#simulation" className="inline-flex items-center gap-2 rounded-full bg-cyan-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300">
+            <div className="mt-6 flex flex-wrap gap-3">
+              <a href="#simulation" className="inline-flex items-center gap-2 rounded-full bg-cyan-300 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200">
                 Launch Scenario
                 <ArrowRight className="h-4 w-4" />
               </a>
-              <a href="#impact" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10">
-                View Case Studies
+              <a href="#operations" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10">
+                View Active Operations
               </a>
             </div>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {services.map((item) => (
-                <div key={item.title} className="rounded-[24px] border border-white/10 bg-white/5 p-4">
-                  <item.icon className="h-5 w-5 text-cyan-300" />
+                <div key={item.title} className="rounded-[26px] border border-white/10 bg-white/4 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+                  <div className="inline-flex rounded-2xl bg-white/6 p-3">
+                    <item.icon className="h-5 w-5 text-cyan-300" />
+                  </div>
                   <h3 className="mt-4 text-base font-semibold text-white">{item.title}</h3>
                   <p className="mt-2 text-sm leading-6 text-slate-300">{item.body}</p>
                 </div>
@@ -160,8 +162,8 @@ export const Dashboard = () => {
             </div>
           </div>
 
-          <div className="grid gap-5">
-            <section className="panel-surface rounded-[32px] p-6">
+          <div className="grid gap-6">
+            <section className="panel-surface rounded-[36px] p-6">
               <div className="flex items-center gap-2">
                 <Zap className="h-4 w-4 text-cyan-300" />
                 <h2 className="text-xl font-semibold">Operational overview</h2>
@@ -171,10 +173,10 @@ export const Dashboard = () => {
               </div>
             </section>
 
-            <section className="panel-surface rounded-[32px] p-6">
+            <section className="panel-surface rounded-[36px] p-6">
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-[11px] uppercase tracking-[0.28em] text-slate-400">Signal quality</p>
+                  <p className="text-[11px] uppercase tracking-[0.28em] text-slate-400">Command health</p>
                   <h2 className="mt-2 text-xl font-semibold text-white">Field communications readiness</h2>
                 </div>
                 <div className="rounded-full bg-cyan-400/15 px-4 py-2 text-sm font-semibold text-cyan-100">
@@ -185,15 +187,15 @@ export const Dashboard = () => {
                 <div className="h-full rounded-full bg-[linear-gradient(90deg,#22c55e_0%,#38bdf8_55%,#f59e0b_100%)]" style={{ width: `${signalQuality}%` }} />
               </div>
               <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <div className="rounded-[22px] border border-white/10 bg-white/5 p-4">
                   <p className="text-xs uppercase tracking-[0.18em] text-slate-400">AI confidence</p>
                   <p className="mt-2 text-2xl font-semibold text-white">{aiBriefing.confidence}%</p>
                 </div>
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <div className="rounded-[22px] border border-white/10 bg-white/5 p-4">
                   <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Moving fleet</p>
                   <p className="mt-2 text-2xl font-semibold text-white">{movingFleet}</p>
                 </div>
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <div className="rounded-[22px] border border-white/10 bg-white/5 p-4">
                   <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Route warnings</p>
                   <p className="mt-2 text-2xl font-semibold text-white">{routeWarnings}</p>
                 </div>
@@ -202,7 +204,7 @@ export const Dashboard = () => {
           </div>
         </section>
 
-        <section id="simulation" className="grid gap-5 xl:grid-cols-[360px_minmax(0,1fr)]">
+        <section id="simulation" className="grid gap-6 xl:grid-cols-[330px_minmax(0,1fr)]">
           <div className="flex flex-col gap-5">
             <SimulationControls
               settings={settings}
@@ -218,11 +220,14 @@ export const Dashboard = () => {
             <AIWhatIfBriefing briefing={aiBriefing} comparisons={comparisons} />
           </div>
 
-          <section className="panel-surface rounded-[32px] p-4 sm:p-5 lg:p-6">
-            <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <section className="panel-surface rounded-[36px] p-4 sm:p-5 lg:p-6">
+            <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="text-[11px] uppercase tracking-[0.35em] text-slate-400">Interactive map</p>
-                <h2 className="mt-2 text-2xl font-semibold text-white">Responsive Bengaluru operations view</h2>
+                <p className="section-kicker">Interactive map</p>
+                <h2 className="mt-2 text-3xl font-semibold text-white">Bengaluru street operations view</h2>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
+                  The command map is now the primary surface. Response context, risk overlays, and simulated operations sit around it instead of fighting for the same attention.
+                </p>
               </div>
               <div className="flex flex-wrap gap-3">
                 <StatusBadge icon={<Ambulance className="h-3.5 w-3.5" />} label="Fleet" value={`${fleet.length}`} />
@@ -234,17 +239,17 @@ export const Dashboard = () => {
           </section>
         </section>
 
-        <section id="operations" className="grid gap-5 lg:grid-cols-[1.05fr_0.95fr]">
+        <section id="operations" className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
           <ServiceOrchestration missions={visibleMissions} />
           <SystemAlerts alerts={alerts} />
         </section>
 
-        <section className="grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
+        <section className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
           <LiveOperationsStats stats={operations} />
           <NotificationFeed notifications={notifications} activeIds={activeNotificationIds} />
         </section>
 
-        <section className="grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
+        <section className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">
           <ScenarioComparisonBoard comparisons={comparisons} />
           <ResponseMatrix summary={serviceSummary} />
         </section>
