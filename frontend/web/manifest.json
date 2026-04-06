@@ -1,0 +1,9 @@
+{
+  "name": "SupplyGuard AI",
+  "short_name": "SupplyGuard",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#005f73",
+  "description": "SupplyGuard AI web console"
+}
