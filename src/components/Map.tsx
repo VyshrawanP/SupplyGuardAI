@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import L from 'leaflet';
 import { Circle, MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from 'react-leaflet';
 import {
@@ -13,6 +13,11 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { useStore } from '../store/useStore';
 
 type LatLng = { lat: number; lng: number };
+
+type RouteDescriptor = {
+  id: string;
+  points: LatLng[];
+};
 
 const REAL_LOCALITY_COORDS: Record<string, LatLng> = {
   whitefield: { lat: 12.9698, lng: 77.7499 },
@@ -44,54 +49,6 @@ const REAL_HUB_COORDS: Record<string, LatLng> = {
   bommasandra: { lat: 12.8168, lng: 77.6896 },
 };
 
-const REAL_ROUTE_PATHS: Record<string, LatLng[]> = {
-  'orr-east': [
-    { lat: 12.9698, lng: 77.7499 },
-    { lat: 12.9815, lng: 77.7360 },
-    { lat: 12.9916, lng: 77.7207 },
-    { lat: 13.0019, lng: 77.7060 },
-    { lat: 13.0077, lng: 77.6955 },
-  ],
-  'whitefield-core': [
-    { lat: 13.0077, lng: 77.6955 },
-    { lat: 13.0002, lng: 77.6763 },
-    { lat: 12.9947, lng: 77.6618 },
-    { lat: 12.9860, lng: 77.6508 },
-    { lat: 12.9784, lng: 77.6408 },
-  ],
-  'north-core': [
-    { lat: 13.1007, lng: 77.5963 },
-    { lat: 13.0759, lng: 77.5962 },
-    { lat: 13.0485, lng: 77.5967 },
-    { lat: 13.0358, lng: 77.5970 },
-    { lat: 13.0067, lng: 77.5984 },
-    { lat: 12.9893, lng: 77.6019 },
-    { lat: 12.9756, lng: 77.6066 },
-  ],
-  'core-south': [
-    { lat: 12.9756, lng: 77.6066 },
-    { lat: 12.9679, lng: 77.6116 },
-    { lat: 12.9578, lng: 77.6174 },
-    { lat: 12.9468, lng: 77.6217 },
-    { lat: 12.9352, lng: 77.6245 },
-  ],
-  'ecity-south': [
-    { lat: 12.9352, lng: 77.6245 },
-    { lat: 12.9174, lng: 77.6318 },
-    { lat: 12.9007, lng: 77.6388 },
-    { lat: 12.8796, lng: 77.6485 },
-    { lat: 12.8604, lng: 77.6562 },
-    { lat: 12.8456, lng: 77.6603 },
-  ],
-  'west-south': [
-    { lat: 12.9275, lng: 77.5155 },
-    { lat: 12.9279, lng: 77.5360 },
-    { lat: 12.9287, lng: 77.5534 },
-    { lat: 12.9294, lng: 77.5675 },
-    { lat: 12.9299, lng: 77.5823 },
-  ],
-};
-
 const servicePalette: Record<string, string> = {
   ambulance: '#f87171',
   drone: '#38bdf8',
@@ -100,6 +57,9 @@ const servicePalette: Record<string, string> = {
   evacuation: '#c4b5fd',
   utility: '#34d399',
 };
+
+const osrmRouteCache = new globalThis.Map<string, LatLng[]>();
+const OSRM_BASE_URL = 'https://router.project-osrm.org/route/v1/driving';
 
 const routeColor = (status: string) => {
   if (status === 'blocked') {
@@ -119,29 +79,6 @@ const mapPointToBengaluru = (point: { lat: number; lng: number }): LatLng => {
   const lng = 77.460 + (point.lng / 100) * (77.782 - 77.460);
   return { lat, lng };
 };
-
-const interpolatePoint = (from: LatLng, to: LatLng, t: number): LatLng => ({
-  lat: from.lat + (to.lat - from.lat) * t,
-  lng: from.lng + (to.lng - from.lng) * t,
-});
-
-const progressBetween = (
-  start: { lat: number; lng: number },
-  end: { lat: number; lng: number },
-  point: { lat: number; lng: number },
-) => {
-  const dx = end.lng - start.lng;
-  const dy = end.lat - start.lat;
-  const lengthSquared = dx * dx + dy * dy;
-  if (lengthSquared === 0) {
-    return 0;
-  }
-
-  const t = ((point.lng - start.lng) * dx + (point.lat - start.lat) * dy) / lengthSquared;
-  return Math.max(0, Math.min(1, t));
-};
-
-const routePathFor = (routeId: string, from: LatLng, to: LatLng) => REAL_ROUTE_PATHS[routeId] ?? [from, to];
 
 const riskRadiusMeters = (riskScore: number) => Math.max(450, riskScore * 28);
 
@@ -218,6 +155,106 @@ const fleetMarkerIcon = (service: string) => {
   );
 };
 
+const dedupeConsecutivePoints = (points: LatLng[]) =>
+  points.filter((point, index, array) => {
+    if (index === 0) {
+      return true;
+    }
+
+    const previous = array[index - 1];
+    return Math.abs(previous.lat - point.lat) > 0.00005 || Math.abs(previous.lng - point.lng) > 0.00005;
+  });
+
+const buildRouteCacheKey = (points: LatLng[]) =>
+  points.map((point) => `${point.lng.toFixed(5)},${point.lat.toFixed(5)}`).join(';');
+
+async function fetchOsrmRoute(points: LatLng[]): Promise<LatLng[]> {
+  const cleanPoints = dedupeConsecutivePoints(points);
+  if (cleanPoints.length < 2) {
+    return cleanPoints;
+  }
+
+  const cacheKey = buildRouteCacheKey(cleanPoints);
+  const cached = osrmRouteCache.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  const coordinates = cleanPoints.map((point) => `${point.lng},${point.lat}`).join(';');
+  const response = await fetch(
+    `${OSRM_BASE_URL}/${coordinates}?overview=full&geometries=geojson&steps=false&continue_straight=false`,
+  );
+
+  if (!response.ok) {
+    throw new Error(`OSRM request failed with status ${response.status}`);
+  }
+
+  const payload = await response.json();
+  const geometry = payload?.routes?.[0]?.geometry?.coordinates;
+
+  if (!Array.isArray(geometry) || geometry.length < 2) {
+    throw new Error('OSRM did not return a valid route geometry');
+  }
+
+  const route = geometry.map(([lng, lat]: [number, number]) => ({ lat, lng }));
+  osrmRouteCache.set(cacheKey, route);
+  return route;
+}
+
+function useOsrmRoutes(descriptors: RouteDescriptor[]) {
+  const [routeMap, setRouteMap] = useState<Record<string, LatLng[]>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const cachedEntries = descriptors
+      .map((descriptor) => {
+        const route = osrmRouteCache.get(buildRouteCacheKey(descriptor.points));
+        return route ? [descriptor.id, route] as const : null;
+      })
+      .filter((entry): entry is readonly [string, LatLng[]] => entry !== null);
+
+    if (cachedEntries.length > 0) {
+      setRouteMap((current) => ({
+        ...current,
+        ...Object.fromEntries(cachedEntries),
+      }));
+    }
+
+    const load = async () => {
+      const results = await Promise.all(
+        descriptors.map(async (descriptor) => {
+          try {
+            const route = await fetchOsrmRoute(descriptor.points);
+            return [descriptor.id, route] as const;
+          } catch (error) {
+            console.error(`Failed to fetch OSRM geometry for ${descriptor.id}`, error);
+            return null;
+          }
+        }),
+      );
+
+      if (cancelled) {
+        return;
+      }
+
+      const resolved = results.filter((entry): entry is readonly [string, LatLng[]] => entry !== null);
+      setRouteMap((current) => ({
+        ...current,
+        ...Object.fromEntries(resolved),
+      }));
+    };
+
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [descriptors]);
+
+  return routeMap;
+}
+
 function MapViewport({ center }: { center: LatLng }) {
   const map = useMap();
   map.setView(center, 11.5, { animate: true });
@@ -241,6 +278,65 @@ function InfoContent({
     </div>
   );
 }
+
+const distanceBetween = (a: LatLng, b: LatLng) => Math.hypot(a.lat - b.lat, a.lng - b.lng);
+
+const routeLength = (points: LatLng[]) =>
+  points.slice(1).reduce((sum, point, index) => sum + distanceBetween(points[index], point), 0);
+
+const positionAlongRoute = (points: LatLng[], progress: number): LatLng => {
+  if (points.length === 0) {
+    return { lat: 12.9716, lng: 77.5946 };
+  }
+
+  if (points.length === 1) {
+    return points[0];
+  }
+
+  const boundedProgress = Math.max(0, Math.min(1, progress));
+  const totalLength = routeLength(points);
+
+  if (totalLength === 0) {
+    return points[0];
+  }
+
+  const targetLength = totalLength * boundedProgress;
+  let traversed = 0;
+
+  for (let index = 1; index < points.length; index += 1) {
+    const start = points[index - 1];
+    const end = points[index];
+    const segmentLength = distanceBetween(start, end);
+
+    if (traversed + segmentLength >= targetLength) {
+      const segmentProgress = segmentLength === 0 ? 0 : (targetLength - traversed) / segmentLength;
+      return {
+        lat: start.lat + (end.lat - start.lat) * segmentProgress,
+        lng: start.lng + (end.lng - start.lng) * segmentProgress,
+      };
+    }
+
+    traversed += segmentLength;
+  }
+
+  return points[points.length - 1];
+};
+
+const progressBetweenAbstractPoints = (
+  start: { lat: number; lng: number },
+  end: { lat: number; lng: number },
+  point: { lat: number; lng: number },
+) => {
+  const dx = end.lng - start.lng;
+  const dy = end.lat - start.lat;
+  const lengthSquared = dx * dx + dy * dy;
+  if (lengthSquared === 0) {
+    return 0;
+  }
+
+  const t = ((point.lng - start.lng) * dx + (point.lat - start.lat) * dy) / lengthSquared;
+  return Math.max(0, Math.min(1, t));
+};
 
 export const Map: React.FC = () => {
   const {
@@ -288,6 +384,56 @@ export const Map: React.FC = () => {
     [localityLookup, selectedLocality.id],
   );
 
+  const routeDescriptors = useMemo<RouteDescriptor[]>(
+    () =>
+      routes
+        .map((route) => {
+          const from = localityLookup.get(route.from);
+          const to = localityLookup.get(route.to);
+          if (!from || !to) {
+            return null;
+          }
+
+          return {
+            id: `route:${route.id}`,
+            points: [from, to],
+          };
+        })
+        .filter((descriptor): descriptor is RouteDescriptor => descriptor !== null),
+    [localityLookup, routes],
+  );
+
+  const missionDescriptors = useMemo<RouteDescriptor[]>(
+    () =>
+      missions
+        .map((mission) => {
+          const origin = hubLookup.get(mission.originId);
+          const locality = localityLookup.get(mission.localityId);
+          const hospitalDestination = hospitalLookup.get(mission.destinationId);
+          const hubDestination = hubLookup.get(mission.destinationId);
+          const destination = hospitalDestination ?? hubDestination ?? locality;
+
+          if (!origin || !locality || !destination) {
+            return null;
+          }
+
+          const points =
+            destination.lat === locality.lat && destination.lng === locality.lng
+              ? [origin, locality]
+              : [origin, locality, destination];
+
+          return {
+            id: `mission:${mission.id}`,
+            points,
+          };
+        })
+        .filter((descriptor): descriptor is RouteDescriptor => descriptor !== null),
+    [hospitalLookup, hubLookup, localityLookup, missions],
+  );
+
+  const corridorRoutes = useOsrmRoutes(routeDescriptors);
+  const missionRoutes = useOsrmRoutes(missionDescriptors);
+
   return (
     <div className="map-shell relative overflow-hidden rounded-[28px] border border-white/10 lg:rounded-[36px]">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.08),transparent_28%),radial-gradient(circle_at_top_right,rgba(56,189,248,0.14),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(251,146,60,0.12),transparent_28%)]" />
@@ -306,13 +452,10 @@ export const Map: React.FC = () => {
           />
 
           {routes.map((route) => {
-            const from = localityLookup.get(route.from);
-            const to = localityLookup.get(route.to);
-            if (!from || !to) {
+            const routePath = corridorRoutes[`route:${route.id}`];
+            if (!routePath || routePath.length < 2) {
               return null;
             }
-
-            const routePath = routePathFor(route.id, from, to);
 
             return (
               <Polyline
@@ -328,23 +471,15 @@ export const Map: React.FC = () => {
           })}
 
           {missions.slice(0, 20).map((mission) => {
-            const start = hubLookup.get(mission.originId);
-            const end = localityLookup.get(mission.localityId);
-            if (!start || !end) {
+            const missionPath = missionRoutes[`mission:${mission.id}`];
+            if (!missionPath || missionPath.length < 2) {
               return null;
             }
-
-            const missionRoute = [
-              start,
-              interpolatePoint(start, end, 0.28),
-              interpolatePoint(start, end, 0.62),
-              end,
-            ];
 
             return (
               <Polyline
                 key={mission.id}
-                positions={missionRoute.map((point) => [point.lat, point.lng])}
+                positions={missionPath.map((point) => [point.lat, point.lng])}
                 pathOptions={{
                   color: servicePalette[mission.service] ?? '#e2e8f0',
                   weight: mission.priority === 'critical' ? 3.5 : 2,
@@ -475,21 +610,19 @@ export const Map: React.FC = () => {
           })}
 
           {fleet.map((unit) => {
-            const hub = hubs.find((item) => item.id === (missions.find((mission) => mission.service === unit.service && mission.localityId === unit.localityId)?.originId ?? ''));
+            const relatedMission = missions.find((mission) => mission.service === unit.service && mission.localityId === unit.localityId);
+            const missionPath = relatedMission ? missionRoutes[`mission:${relatedMission.id}`] : null;
+            const hub = relatedMission ? hubs.find((item) => item.id === relatedMission.originId) : null;
             const locality = localities.find((item) => item.id === unit.localityId);
-            const realHub = hub ? hubLookup.get(hub.id) : null;
-            const realLocality = locality ? localityLookup.get(locality.id) : null;
-            const sourceHubPoint = hub?.position;
-            const sourceLocalityPoint = locality?.position;
-
+            const progress =
+              hub && locality
+                ? progressBetweenAbstractPoints(hub.position, locality.position, unit.position)
+                : 0;
+            const fallbackPosition = locality ? localityLookup.get(locality.id) : null;
             const position =
-              realHub && realLocality && sourceHubPoint && sourceLocalityPoint
-                ? interpolatePoint(
-                    realHub,
-                    realLocality,
-                    progressBetween(sourceHubPoint, sourceLocalityPoint, unit.position),
-                  )
-                : mapPointToBengaluru(unit.position);
+              missionPath && missionPath.length > 1
+                ? positionAlongRoute(missionPath, progress)
+                : fallbackPosition ?? mapPointToBengaluru(unit.position);
 
             return (
               <Marker
@@ -555,7 +688,7 @@ export const Map: React.FC = () => {
               </span>
             </div>
             <p className="mt-3 text-sm leading-6 text-slate-300">
-              The simulation engine still drives the scenario, but the map now runs on OpenStreetMap tiles and Leaflet overlays for a simpler, key-free local development flow.
+              Corridor and mission paths are now fetched live from the OSRM public routing engine so route geometry follows actual roads instead of synthetic straight-line links.
             </p>
           </div>
         </div>
