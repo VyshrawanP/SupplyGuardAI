@@ -538,7 +538,7 @@ const computeScenario = (settings: SimulationSettings) => {
     } satisfies FleetUnit;
   });
 
-  const topLocality = strainedLocalities[0] ?? focus;
+  const topLocality = strainedLocalities[0] ?? localities.find((locality) => locality.id === focus.id) ?? localities[0];
   const topRoute = routes.sort((a, b) => b.riskScore - a.riskScore)[0];
   const coverageBase = hospitals.reduce((sum, hospital) => sum + hospital.medicineStock, 0) / hospitals.length;
   const foodCoverage = Math.round(clamp((settings.medicineBuffer * 0.75 + reliefHubs.reduce((sum, hub) => sum + hub.stock, 0) / 80) - strainedLocalities.length * 2.6));
@@ -627,7 +627,7 @@ const computeScenario = (settings: SimulationSettings) => {
   const notifications: NotificationItem[] = [
     ...hospitals
       .filter((hospital) => hospital.autoOrderEtaMinutes !== null)
-      .map((hospital) => ({
+      .map<NotificationItem>((hospital) => ({
         id: `order-${hospital.id}`,
         title: `Auto-order placed for ${hospital.name}`,
         detail: `Medicine stock dropped to ${hospital.medicineStock}%. Replenishment convoy and drone reserve ETA ${hospital.autoOrderEtaMinutes} mins.`,
@@ -635,7 +635,7 @@ const computeScenario = (settings: SimulationSettings) => {
         severity: hospital.medicineStock < 32 ? 'critical' : 'high',
         status: 'in-progress',
       })),
-    ...missions.slice(0, 8).map((mission, index) => ({
+    ...missions.slice(0, 8).map<NotificationItem>((mission) => ({
       id: `mission-note-${mission.id}`,
       title: mission.title,
       detail: `${mission.units} units by ${mission.service} toward ${localities.find((item) => item.id === mission.localityId)?.name ?? 'target locality'} with route risk ${mission.routeRisk}%.`,
@@ -643,7 +643,7 @@ const computeScenario = (settings: SimulationSettings) => {
       severity: mission.priority === 'critical' ? 'critical' : mission.priority === 'priority' ? 'high' : 'medium',
       status: mission.status === 'queued' ? 'new' : mission.status === 'dispatching' ? 'in-progress' : 'completed',
     })),
-    ...hospitals.slice(0, 4).map((hospital) => ({
+    ...hospitals.slice(0, 4).map<NotificationItem>((hospital) => ({
       id: `hospital-note-${hospital.id}`,
       title: `${hospital.name} intake update`,
       detail: `${hospital.currentPatients} patients active, ${hospital.incomingPatients} inbound, ${hospital.droneInbound} drone drops pending.`,

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Building2, Plane, Users } from 'lucide-react';
 import { HospitalStatus } from '../../store/useStore';
 import { GlassCard } from '../ui/GlassCard';
@@ -72,7 +73,7 @@ export function HospitalOperationsView({
   );
 }
 
-function MiniStat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function MiniStat({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (
     <div className="rounded-[18px] border border-white/10 bg-slate-950/50 p-2.5">
       <div className="flex items-center gap-2 text-sm text-slate-300">

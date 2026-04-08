@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import L from 'leaflet';
 import { Circle, MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from 'react-leaflet';
 import {
@@ -60,6 +60,7 @@ const servicePalette: Record<string, string> = {
 
 const osrmRouteCache = new globalThis.Map<string, LatLng[]>();
 const OSRM_BASE_URL = 'https://router.project-osrm.org/route/v1/driving';
+const OSRM_STORAGE_PREFIX = 'supplyguard-osrm-route:';
 
 const routeColor = (status: string) => {
   if (status === 'blocked') {
@@ -168,6 +169,42 @@ const dedupeConsecutivePoints = (points: LatLng[]) =>
 const buildRouteCacheKey = (points: LatLng[]) =>
   points.map((point) => `${point.lng.toFixed(5)},${point.lat.toFixed(5)}`).join(';');
 
+const readStoredRoute = (cacheKey: string): LatLng[] | null => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const raw = window.localStorage.getItem(`${OSRM_STORAGE_PREFIX}${cacheKey}`);
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed) || parsed.length < 2) {
+      return null;
+    }
+
+    return parsed.filter(
+      (point: unknown): point is LatLng =>
+        typeof point === 'object' &&
+        point !== null &&
+        typeof (point as LatLng).lat === 'number' &&
+        typeof (point as LatLng).lng === 'number',
+    );
+  } catch {
+    return null;
+  }
+};
+
+const writeStoredRoute = (cacheKey: string, route: LatLng[]) => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.localStorage.setItem(`${OSRM_STORAGE_PREFIX}${cacheKey}`, JSON.stringify(route));
+};
+
 async function fetchOsrmRoute(points: LatLng[]): Promise<LatLng[]> {
   const cleanPoints = dedupeConsecutivePoints(points);
   if (cleanPoints.length < 2) {
@@ -178,6 +215,12 @@ async function fetchOsrmRoute(points: LatLng[]): Promise<LatLng[]> {
   const cached = osrmRouteCache.get(cacheKey);
   if (cached) {
     return cached;
+  }
+
+  const stored = readStoredRoute(cacheKey);
+  if (stored) {
+    osrmRouteCache.set(cacheKey, stored);
+    return stored;
   }
 
   const coordinates = cleanPoints.map((point) => `${point.lng},${point.lat}`).join(';');
@@ -198,14 +241,17 @@ async function fetchOsrmRoute(points: LatLng[]): Promise<LatLng[]> {
 
   const route = geometry.map(([lng, lat]: [number, number]) => ({ lat, lng }));
   osrmRouteCache.set(cacheKey, route);
+  writeStoredRoute(cacheKey, route);
   return route;
 }
 
 function useOsrmRoutes(descriptors: RouteDescriptor[]) {
   const [routeMap, setRouteMap] = useState<Record<string, LatLng[]>>({});
+  const [failedRouteIds, setFailedRouteIds] = useState<string[]>([]);
 
   useEffect(() => {
     let cancelled = false;
+    setFailedRouteIds([]);
 
     const cachedEntries = descriptors
       .map((descriptor) => {
@@ -229,6 +275,19 @@ function useOsrmRoutes(descriptors: RouteDescriptor[]) {
             return [descriptor.id, route] as const;
           } catch (error) {
             console.error(`Failed to fetch OSRM geometry for ${descriptor.id}`, error);
+
+            const stored = readStoredRoute(buildRouteCacheKey(descriptor.points));
+            if (stored) {
+              osrmRouteCache.set(buildRouteCacheKey(descriptor.points), stored);
+              return [descriptor.id, stored] as const;
+            }
+
+            if (!cancelled) {
+              setFailedRouteIds((current) =>
+                current.includes(descriptor.id) ? current : [...current, descriptor.id],
+              );
+            }
+
             return null;
           }
         }),
@@ -252,12 +311,30 @@ function useOsrmRoutes(descriptors: RouteDescriptor[]) {
     };
   }, [descriptors]);
 
-  return routeMap;
+  return { routeMap, failedRouteIds };
 }
 
 function MapViewport({ center }: { center: LatLng }) {
   const map = useMap();
-  map.setView(center, 11.5, { animate: true });
+  const previousCenterRef = useRef<LatLng | null>(null);
+
+  useEffect(() => {
+    const previousCenter = previousCenterRef.current;
+
+    if (!previousCenter) {
+      previousCenterRef.current = center;
+      return;
+    }
+
+    const latChanged = Math.abs(previousCenter.lat - center.lat) > 0.0025;
+    const lngChanged = Math.abs(previousCenter.lng - center.lng) > 0.0025;
+
+    if (latChanged || lngChanged) {
+      map.setView(center, map.getZoom(), { animate: true });
+      previousCenterRef.current = center;
+    }
+  }, [center, map]);
+
   return null;
 }
 
@@ -431,8 +508,15 @@ export const Map: React.FC = () => {
     [hospitalLookup, hubLookup, localityLookup, missions],
   );
 
-  const corridorRoutes = useOsrmRoutes(routeDescriptors);
-  const missionRoutes = useOsrmRoutes(missionDescriptors);
+  const {
+    routeMap: corridorRoutes,
+    failedRouteIds: failedCorridorRouteIds,
+  } = useOsrmRoutes(routeDescriptors);
+  const {
+    routeMap: missionRoutes,
+    failedRouteIds: failedMissionRouteIds,
+  } = useOsrmRoutes(missionDescriptors);
+  const routingFallbackActive = failedCorridorRouteIds.length > 0 || failedMissionRouteIds.length > 0;
 
   return (
     <div className="map-shell relative overflow-hidden rounded-[28px] border border-white/10 lg:rounded-[36px]">
@@ -452,7 +536,8 @@ export const Map: React.FC = () => {
           />
 
           {routes.map((route) => {
-            const routePath = corridorRoutes[`route:${route.id}`];
+            const descriptor = routeDescriptors.find((item) => item.id === `route:${route.id}`);
+            const routePath = corridorRoutes[`route:${route.id}`] ?? descriptor?.points;
             if (!routePath || routePath.length < 2) {
               return null;
             }
@@ -471,7 +556,8 @@ export const Map: React.FC = () => {
           })}
 
           {missions.slice(0, 20).map((mission) => {
-            const missionPath = missionRoutes[`mission:${mission.id}`];
+            const descriptor = missionDescriptors.find((item) => item.id === `mission:${mission.id}`);
+            const missionPath = missionRoutes[`mission:${mission.id}`] ?? descriptor?.points;
             if (!missionPath || missionPath.length < 2) {
               return null;
             }
@@ -611,7 +697,12 @@ export const Map: React.FC = () => {
 
           {fleet.map((unit) => {
             const relatedMission = missions.find((mission) => mission.service === unit.service && mission.localityId === unit.localityId);
-            const missionPath = relatedMission ? missionRoutes[`mission:${relatedMission.id}`] : null;
+            const fallbackMissionDescriptor = relatedMission
+              ? missionDescriptors.find((descriptor) => descriptor.id === `mission:${relatedMission.id}`)
+              : null;
+            const missionPath = relatedMission
+              ? missionRoutes[`mission:${relatedMission.id}`] ?? fallbackMissionDescriptor?.points ?? null
+              : null;
             const hub = relatedMission ? hubs.find((item) => item.id === relatedMission.originId) : null;
             const locality = localities.find((item) => item.id === unit.localityId);
             const progress =
@@ -653,6 +744,11 @@ export const Map: React.FC = () => {
               <p className="text-[11px] uppercase tracking-[0.36em] text-cyan-200/80">Live Bengaluru street map</p>
               <h3 className="mt-2 text-xl font-semibold text-white">Disaster management simulation on OpenStreetMap</h3>
               <p className="mt-2 text-sm leading-6 text-slate-300">{aiBriefing.summary}</p>
+              {routingFallbackActive ? (
+                <p className="mt-3 inline-flex rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-100">
+                  Routing fallback active
+                </p>
+              ) : null}
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
               <div className="rounded-2xl border border-white/10 bg-slate-950/78 px-4 py-3 text-sm text-slate-200 backdrop-blur-xl">
