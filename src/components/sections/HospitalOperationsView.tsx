@@ -1,4 +1,4 @@
-import { Building2, Plane, Users } from 'lucide-react';
+import { Building2, Users } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { HospitalStatus } from '../../store/useStore';
 import { GlassCard } from '../ui/GlassCard';
@@ -15,13 +15,13 @@ export function HospitalOperationsView({
   const selected = hospitals.find((item) => item.id === selectedHospitalId) ?? hospitals[0];
 
   return (
-    <GlassCard className="panel-surface rounded-[30px] p-4 sm:p-5">
+    <GlassCard className="panel-surface rounded-[28px] p-4 sm:p-5">
       <div className="flex items-center gap-2">
         <Building2 className="h-4 w-4 text-emerald-300" />
-        <h3 className="text-xl font-semibold">Hospital operations view</h3>
+        <h3 className="text-lg font-semibold">Hospital</h3>
       </div>
 
-      <label className="field-label mt-3" htmlFor="hospital-view">View hospital</label>
+      <label className="field-label mt-3" htmlFor="hospital-view">View</label>
       <select
         id="hospital-view"
         className="input-surface"
@@ -35,11 +35,11 @@ export function HospitalOperationsView({
         ))}
       </select>
 
-      <div className="mt-3 rounded-[24px] border border-white/10 bg-white/5 p-3.5 sm:p-4">
+      <div className="mt-3 rounded-[22px] border border-white/10 bg-white/5 p-3.5 sm:p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h4 className="text-lg font-semibold text-white">{selected.name}</h4>
-            <p className="mt-0.5 text-sm text-slate-300">{selected.currentPatients} people currently inside care flow</p>
+            <p className="mt-0.5 text-sm text-slate-300">{selected.currentPatients} in care flow</p>
           </div>
           <span className={`rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.16em] ${
             selected.status === 'critical'
@@ -52,20 +52,18 @@ export function HospitalOperationsView({
           </span>
         </div>
 
-        <div className="mt-3 grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
           <MiniStat icon={<Users className="h-4 w-4 text-cyan-300" />} label="Incoming people" value={String(selected.incomingPatients)} />
           <MiniStat icon={<Users className="h-4 w-4 text-slate-300" />} label="Outgoing people" value={String(selected.outgoingPatients)} />
-          <MiniStat icon={<Plane className="h-4 w-4 text-sky-300" />} label="Drone inbound" value={String(selected.droneInbound)} />
           <MiniStat icon={<Building2 className="h-4 w-4 text-emerald-300" />} label="Food stock" value={`${selected.foodStock}%`} />
           <MiniStat icon={<Building2 className="h-4 w-4 text-amber-300" />} label="Medicine stock" value={`${selected.medicineStock}%`} />
-          <MiniStat icon={<Building2 className="h-4 w-4 text-rose-300" />} label="Rescue assigned" value={String(selected.rescueTeamsAssigned)} />
         </div>
 
         <div className="mt-3 rounded-2xl border border-white/10 bg-slate-950/50 p-3 text-sm text-slate-300">
           {selected.autoOrderEtaMinutes !== null ? (
-            <p>Automatic ordering is active. Replenishment ETA is {selected.autoOrderEtaMinutes} minutes.</p>
+            <p>Auto-order ETA: {selected.autoOrderEtaMinutes} min</p>
           ) : (
-            <p>Automatic ordering is on standby. Current stock levels are above the emergency reorder threshold.</p>
+            <p>Auto-order: standby</p>
           )}
         </div>
       </div>

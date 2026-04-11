@@ -1,15 +1,13 @@
+import { useEffect, useState } from 'react';
 import {
   Ambulance,
   ArrowRight,
-  Bot,
   Building2,
   MapPinned,
   Package,
   RadioTower,
   Shield,
-  Siren,
   Truck,
-  Waves,
   Wifi,
   Zap,
 } from 'lucide-react';
@@ -31,6 +29,9 @@ import { LiveOperationsStats } from './sections/LiveOperationsStats';
 import { NotificationFeed } from './sections/NotificationFeed';
 import { StatusBadge } from './ui/StatusBadge';
 import { MeshAlertsPanel } from './sections/MeshAlertsPanel';
+
+type DashboardMode = 'compact' | 'full';
+const DASHBOARD_MODE_STORAGE_KEY = 'sg_dashboard_mode';
 
 const services = [
   {
@@ -56,6 +57,15 @@ const services = [
 ];
 
 export const Dashboard = () => {
+  const [mode, setMode] = useState<DashboardMode>(() => {
+    if (typeof window === 'undefined') return 'compact';
+    return window.localStorage.getItem(DASHBOARD_MODE_STORAGE_KEY) === 'full' ? 'full' : 'compact';
+  });
+
+  useEffect(() => {
+    window.localStorage.setItem(DASHBOARD_MODE_STORAGE_KEY, mode);
+  }, [mode]);
+
   const {
     settings,
     localities,
@@ -110,6 +120,7 @@ export const Dashboard = () => {
     ...selectedStressTimeline.notificationIds,
     ...selectedStressDecision.notificationIds,
   ]));
+  const isCompact = mode === 'compact';
 
   return (
     <div className="dashboard-shell min-h-screen bg-[linear-gradient(180deg,#050b12_0%,#09131b_42%,#0e1820_100%)] text-white">
@@ -119,13 +130,22 @@ export const Dashboard = () => {
             <p className="text-[11px] uppercase tracking-[0.35em] text-cyan-200/80">SupplyGuard AI</p>
             <h1 className="mt-1 text-lg font-semibold text-white">Bengaluru Command Console</h1>
           </div>
-          <nav className="hidden items-center gap-6 text-sm text-slate-300 md:flex">
+          {!isCompact && (
+            <nav className="hidden items-center gap-6 text-sm text-slate-300 md:flex">
             <a href="#overview" className="hover:text-white">Overview</a>
             <a href="#simulation" className="hover:text-white">Simulation</a>
             <a href="#operations" className="hover:text-white">Operations</a>
             <a href="#impact" className="hover:text-white">Impact</a>
-          </nav>
+            </nav>
+          )}
           <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setMode((current) => (current === 'compact' ? 'full' : 'compact'))}
+              className="hidden rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:bg-white/10 sm:inline-flex"
+            >
+              {isCompact ? 'Full view' : 'Compact'}
+            </button>
             <div className="hidden rounded-full border border-white/10 bg-slate-950/55 px-3 py-2 text-xs text-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] sm:flex">
               <Wifi className="mr-2 h-3.5 w-3.5 text-cyan-300" />
               Signal {signalQuality}% {signalLabel}
@@ -138,72 +158,74 @@ export const Dashboard = () => {
       </header>
 
       <main className="mx-auto flex max-w-[1480px] flex-col gap-6 px-4 py-6 lg:px-8 lg:py-8">
-        <section id="overview" className="grid gap-6 xl:grid-cols-[1.18fr_0.82fr]">
-          <div className="panel-surface rounded-[36px] p-6 lg:p-8">
-            <BrandHero />
-            <div className="mt-6 flex flex-wrap gap-3">
-              <a href="#simulation" className="inline-flex items-center gap-2 rounded-full bg-cyan-300 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200">
-                Launch Scenario
-                <ArrowRight className="h-4 w-4" />
-              </a>
-              <a href="#operations" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10">
-                View Active Operations
-              </a>
-            </div>
-            <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {services.map((item) => (
-                <div key={item.title} className="rounded-[26px] border border-white/10 bg-white/4 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-                  <div className="inline-flex rounded-2xl bg-white/6 p-3">
-                    <item.icon className="h-5 w-5 text-cyan-300" />
+        {!isCompact && (
+          <section id="overview" className="grid gap-6 xl:grid-cols-[1.18fr_0.82fr]">
+            <div className="panel-surface rounded-[36px] p-6 lg:p-8">
+              <BrandHero />
+              <div className="mt-6 flex flex-wrap gap-3">
+                <a href="#simulation" className="inline-flex items-center gap-2 rounded-full bg-cyan-300 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200">
+                  Launch Scenario
+                  <ArrowRight className="h-4 w-4" />
+                </a>
+                <a href="#operations" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10">
+                  View Active Operations
+                </a>
+              </div>
+              <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                {services.map((item) => (
+                  <div key={item.title} className="rounded-[26px] border border-white/10 bg-white/4 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+                    <div className="inline-flex rounded-2xl bg-white/6 p-3">
+                      <item.icon className="h-5 w-5 text-cyan-300" />
+                    </div>
+                    <h3 className="mt-4 text-base font-semibold text-white">{item.title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-slate-300">{item.body}</p>
                   </div>
-                  <h3 className="mt-4 text-base font-semibold text-white">{item.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-300">{item.body}</p>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
 
-          <div className="grid gap-6">
-            <section className="panel-surface rounded-[36px] p-6">
-              <div className="flex items-center gap-2">
-                <Zap className="h-4 w-4 text-cyan-300" />
-                <h2 className="text-xl font-semibold">Operational overview</h2>
-              </div>
-              <div className="mt-4">
-                <KPIDashboard summary={summary} />
-              </div>
-            </section>
+            <div className="grid gap-6">
+              <section className="panel-surface rounded-[36px] p-6">
+                <div className="flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-cyan-300" />
+                  <h2 className="text-xl font-semibold">Operational overview</h2>
+                </div>
+                <div className="mt-4">
+                  <KPIDashboard summary={summary} />
+                </div>
+              </section>
 
-            <section className="panel-surface rounded-[36px] p-6">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-[11px] uppercase tracking-[0.28em] text-slate-400">Command health</p>
-                  <h2 className="mt-2 text-xl font-semibold text-white">Field communications readiness</h2>
+              <section className="panel-surface rounded-[36px] p-6">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-[11px] uppercase tracking-[0.28em] text-slate-400">Command health</p>
+                    <h2 className="mt-2 text-xl font-semibold text-white">Field communications readiness</h2>
+                  </div>
+                  <div className="rounded-full bg-cyan-400/15 px-4 py-2 text-sm font-semibold text-cyan-100">
+                    {signalQuality}% {signalLabel}
+                  </div>
                 </div>
-                <div className="rounded-full bg-cyan-400/15 px-4 py-2 text-sm font-semibold text-cyan-100">
-                  {signalQuality}% {signalLabel}
+                <div className="mt-4 h-3 overflow-hidden rounded-full bg-white/8">
+                  <div className="h-full rounded-full bg-[linear-gradient(90deg,#22c55e_0%,#38bdf8_55%,#f59e0b_100%)]" style={{ width: `${signalQuality}%` }} />
                 </div>
-              </div>
-              <div className="mt-4 h-3 overflow-hidden rounded-full bg-white/8">
-                <div className="h-full rounded-full bg-[linear-gradient(90deg,#22c55e_0%,#38bdf8_55%,#f59e0b_100%)]" style={{ width: `${signalQuality}%` }} />
-              </div>
-              <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                <div className="rounded-[22px] border border-white/10 bg-white/5 p-4">
-                  <p className="text-xs uppercase tracking-[0.18em] text-slate-400">AI confidence</p>
-                  <p className="mt-2 text-2xl font-semibold text-white">{aiBriefing.confidence}%</p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-[22px] border border-white/10 bg-white/5 p-4">
+                    <p className="text-xs uppercase tracking-[0.18em] text-slate-400">AI confidence</p>
+                    <p className="mt-2 text-2xl font-semibold text-white">{aiBriefing.confidence}%</p>
+                  </div>
+                  <div className="rounded-[22px] border border-white/10 bg-white/5 p-4">
+                    <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Moving fleet</p>
+                    <p className="mt-2 text-2xl font-semibold text-white">{movingFleet}</p>
+                  </div>
+                  <div className="rounded-[22px] border border-white/10 bg-white/5 p-4">
+                    <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Route warnings</p>
+                    <p className="mt-2 text-2xl font-semibold text-white">{routeWarnings}</p>
+                  </div>
                 </div>
-                <div className="rounded-[22px] border border-white/10 bg-white/5 p-4">
-                  <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Moving fleet</p>
-                  <p className="mt-2 text-2xl font-semibold text-white">{movingFleet}</p>
-                </div>
-                <div className="rounded-[22px] border border-white/10 bg-white/5 p-4">
-                  <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Route warnings</p>
-                  <p className="mt-2 text-2xl font-semibold text-white">{routeWarnings}</p>
-                </div>
-              </div>
-            </section>
-          </div>
-        </section>
+              </section>
+            </div>
+          </section>
+        )}
 
         <section id="simulation" className="grid gap-6 xl:grid-cols-[330px_minmax(0,1fr)]">
           <div className="flex flex-col gap-5">
@@ -218,17 +240,21 @@ export const Dashboard = () => {
               onModeChange={(value) => updateSimulation({ disasterMode: value })}
               onSimulationChange={updateSimulation}
             />
-            <AIWhatIfBriefing briefing={aiBriefing} comparisons={comparisons} />
+            {!isCompact && <AIWhatIfBriefing briefing={aiBriefing} comparisons={comparisons} />}
           </div>
 
           <section className="panel-surface rounded-[36px] p-4 sm:p-5 lg:p-6">
             <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="section-kicker">Interactive map</p>
-                <h2 className="mt-2 text-3xl font-semibold text-white">Bengaluru street operations view</h2>
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
-                  The command map is now the primary surface. Response context, risk overlays, and simulated operations sit around it instead of fighting for the same attention.
-                </p>
+                <p className="section-kicker">Map</p>
+                <h2 className={`mt-2 font-semibold text-white ${isCompact ? 'text-xl' : 'text-3xl'}`}>
+                  Bengaluru operations view
+                </h2>
+                {!isCompact && (
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
+                    Response context, risk overlays, and simulated operations sit around the command map.
+                  </p>
+                )}
               </div>
               <div className="flex flex-wrap gap-3">
                 <StatusBadge icon={<Ambulance className="h-3.5 w-3.5" />} label="Fleet" value={`${fleet.length}`} />
@@ -245,83 +271,101 @@ export const Dashboard = () => {
           <SystemAlerts alerts={alerts} />
         </section>
 
-        <section className="grid gap-6 lg:grid-cols-[1fr]">
-          <MeshAlertsPanel />
-        </section>
+        {!isCompact && (
+          <section className="grid gap-6 lg:grid-cols-[1fr]">
+            <MeshAlertsPanel />
+          </section>
+        )}
 
         <section className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
           <LiveOperationsStats stats={operations} />
           <NotificationFeed notifications={notifications} activeIds={activeNotificationIds} />
         </section>
 
-        <section className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">
-          <ScenarioComparisonBoard comparisons={comparisons} />
-          <ResponseMatrix summary={serviceSummary} />
-        </section>
+        {!isCompact && (
+          <section className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">
+            <ScenarioComparisonBoard comparisons={comparisons} />
+            <ResponseMatrix summary={serviceSummary} />
+          </section>
+        )}
 
-        <section>
-          <StressScenarioReport
-            report={stressReport}
-            selectedTimelineId={selectedStressTimelineId}
-            selectedDecisionId={selectedStressDecisionId}
-            onSelectTimeline={selectStressTimeline}
-            onSelectDecision={selectStressDecision}
-          />
-        </section>
+        {!isCompact && (
+          <section>
+            <StressScenarioReport
+              report={stressReport}
+              selectedTimelineId={selectedStressTimelineId}
+              selectedDecisionId={selectedStressDecisionId}
+              onSelectTimeline={selectStressTimeline}
+              onSelectDecision={selectStressDecision}
+            />
+          </section>
+        )}
 
-        <section className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
-          <div className="panel-surface rounded-[32px] p-6">
-            <div className="flex items-center gap-2">
-              <Shield className="h-4 w-4 text-cyan-300" />
-              <h2 className="text-xl font-semibold text-white">Locality intelligence</h2>
-            </div>
-            <div className="mt-4">
-              <LocalityIntelligence
-                locality={selectedLocality}
-                hospitals={supportedHospitals}
-                fleet={fleet.slice(0, 5)}
-                routes={topRoutes}
-                timeline={timeline}
+        {isCompact ? (
+          <section>
+            <HospitalOperationsView
+              hospitals={hospitals}
+              selectedHospitalId={selectedHospitalId}
+              onSelectHospital={selectHospital}
+            />
+          </section>
+        ) : (
+          <>
+            <section className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
+              <div className="panel-surface rounded-[32px] p-6">
+                <div className="flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-cyan-300" />
+                  <h2 className="text-xl font-semibold text-white">Locality intelligence</h2>
+                </div>
+                <div className="mt-4">
+                  <LocalityIntelligence
+                    locality={selectedLocality}
+                    hospitals={supportedHospitals}
+                    fleet={fleet.slice(0, 5)}
+                    routes={topRoutes}
+                    timeline={timeline}
+                  />
+                </div>
+              </div>
+
+              <HospitalOperationsView
+                hospitals={hospitals}
+                selectedHospitalId={selectedHospitalId}
+                onSelectHospital={selectHospital}
               />
-            </div>
-          </div>
+            </section>
 
-          <HospitalOperationsView
-            hospitals={hospitals}
-            selectedHospitalId={selectedHospitalId}
-            onSelectHospital={selectHospital}
-          />
-        </section>
+            <section id="impact">
+              <CaseStudies />
+            </section>
 
-        <section id="impact">
-          <CaseStudies />
-        </section>
-
-        <section className="panel-surface rounded-[32px] p-6 lg:p-8">
-          <div className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
-            <div>
-              <p className="text-[11px] uppercase tracking-[0.35em] text-cyan-200/80">Call To Action</p>
-              <h2 className="mt-3 text-3xl font-semibold leading-tight text-white">Build the full field-ready command center on top of this prototype</h2>
-              <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300">
-                The current frontend is now structured like a real product demo with responsive sections, map intelligence, signal quality, and scenario storytelling. It is ready for the next iteration into a true production command platform.
-              </p>
-            </div>
-            <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
-              <a href="#simulation" className="inline-flex items-center justify-center rounded-full bg-cyan-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300">
-                Run Scenario
-              </a>
-              <a href="#overview" className="inline-flex items-center justify-center rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10">
-                Back To Top
-              </a>
-            </div>
-          </div>
-        </section>
+            <section className="panel-surface rounded-[32px] p-6 lg:p-8">
+              <div className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.35em] text-cyan-200/80">Call To Action</p>
+                  <h2 className="mt-3 text-3xl font-semibold leading-tight text-white">Build the full field-ready command center on top of this prototype</h2>
+                  <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300">
+                    The current frontend is structured like a real product demo with responsive sections, map intelligence, signal quality, and scenario storytelling.
+                  </p>
+                </div>
+                <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
+                  <a href="#simulation" className="inline-flex items-center justify-center rounded-full bg-cyan-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300">
+                    Run Scenario
+                  </a>
+                  <a href="#overview" className="inline-flex items-center justify-center rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10">
+                    Back To Top
+                  </a>
+                </div>
+              </div>
+            </section>
+          </>
+        )}
       </main>
 
       <footer className="border-t border-white/8 bg-slate-950/60">
         <div className="mx-auto flex max-w-[1440px] flex-col gap-3 px-4 py-6 text-sm text-slate-400 sm:flex-row sm:items-center sm:justify-between lg:px-6">
           <p>SupplyGuard AI prototype by @NEOFETCH</p>
-          <p>Offline Bengaluru simulation | Responsive command interface | Local-only demo</p>
+          {!isCompact && <p>Offline Bengaluru simulation | Responsive command interface | Local-only demo</p>}
         </div>
       </footer>
     </div>

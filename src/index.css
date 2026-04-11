@@ -252,35 +252,16 @@ body {
   z-index: 80;
   display: grid;
   place-items: center;
-  background:
-    radial-gradient(circle at top left, rgba(56, 189, 248, 0.16), transparent 28%),
-    radial-gradient(circle at bottom right, rgba(34, 197, 94, 0.12), transparent 24%),
-    rgba(3, 9, 17, 0.9);
-  backdrop-filter: blur(18px);
-  transition: opacity 500ms ease, visibility 500ms ease;
-}
-
-.intro-overlay--visible {
-  opacity: 1;
-  visibility: visible;
-}
-
-.intro-overlay--hidden {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
+  background: rgba(3, 9, 17, 0.92);
 }
 
 .intro-card {
-  width: min(760px, calc(100vw - 32px));
-  border-radius: 32px;
-  border: 1px solid rgba(125, 211, 252, 0.18);
-  background:
-    radial-gradient(circle at top right, rgba(56, 189, 248, 0.16), transparent 34%),
-    rgba(9, 23, 39, 0.9);
-  box-shadow: 0 30px 120px rgba(0, 0, 0, 0.36);
-  padding: 2rem;
-  animation: intro-rise 700ms ease;
+  width: min(560px, calc(100vw - 32px));
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(9, 23, 39, 0.92);
+  box-shadow: 0 20px 80px rgba(0, 0, 0, 0.42);
+  padding: 1.5rem;
 }
 
 .section-kicker {
