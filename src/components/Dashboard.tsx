@@ -29,6 +29,8 @@ import { LiveOperationsStats } from './sections/LiveOperationsStats';
 import { NotificationFeed } from './sections/NotificationFeed';
 import { StatusBadge } from './ui/StatusBadge';
 import { MeshAlertsPanel } from './sections/MeshAlertsPanel';
+import { EfficiencySnapshot } from './sections/EfficiencySnapshot';
+import { INDIA_SCENARIO_CUSTOM_ID } from '../store/indiaScenarioPresets';
 
 type DashboardMode = 'compact' | 'full';
 const DASHBOARD_MODE_STORAGE_KEY = 'sg_dashboard_mode';
@@ -56,7 +58,11 @@ const services = [
   },
 ];
 
-export const Dashboard = () => {
+export const Dashboard = ({
+  onOpenHistory,
+}: {
+  onOpenHistory?: () => void;
+}) => {
   const [mode, setMode] = useState<DashboardMode>(() => {
     if (typeof window === 'undefined') return 'compact';
     return window.localStorage.getItem(DASHBOARD_MODE_STORAGE_KEY) === 'full' ? 'full' : 'compact';
@@ -146,6 +152,15 @@ export const Dashboard = () => {
             >
               {isCompact ? 'Full view' : 'Compact'}
             </button>
+            {onOpenHistory ? (
+              <button
+                type="button"
+                onClick={onOpenHistory}
+                className="hidden rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:bg-white/10 sm:inline-flex"
+              >
+                History replay
+              </button>
+            ) : null}
             <div className="hidden rounded-full border border-white/10 bg-slate-950/55 px-3 py-2 text-xs text-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] sm:flex">
               <Wifi className="mr-2 h-3.5 w-3.5 text-cyan-300" />
               Signal {signalQuality}% {signalLabel}
@@ -234,11 +249,19 @@ export const Dashboard = () => {
               localityOptions={localities.map((locality) => ({ id: locality.id, name: locality.name }))}
               onReset={resetSimulation}
               onLocalityChange={(value) => {
-                updateSimulation({ localityFocus: value });
+                updateSimulation({ scenarioPresetId: INDIA_SCENARIO_CUSTOM_ID, localityFocus: value });
                 selectLocality(value);
               }}
-              onModeChange={(value) => updateSimulation({ disasterMode: value })}
+              onModeChange={(value) => updateSimulation({ scenarioPresetId: INDIA_SCENARIO_CUSTOM_ID, disasterMode: value })}
               onSimulationChange={updateSimulation}
+            />
+            <EfficiencySnapshot
+              summary={summary}
+              aiBriefing={aiBriefing}
+              missions={missions}
+              routes={routes}
+              hospitals={hospitals}
+              scenarioPresetId={settings.scenarioPresetId}
             />
             {!isCompact && <AIWhatIfBriefing briefing={aiBriefing} comparisons={comparisons} />}
           </div>

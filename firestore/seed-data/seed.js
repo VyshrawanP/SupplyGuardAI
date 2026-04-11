@@ -239,6 +239,24 @@ const drones = [
   ['drn-006', 'Sambal HeavyLift', 'operator-006', 21.4669, 83.9756, 73, 35],
 ];
 
+const hospitals = [
+  ['manipal', 'Manipal Hospital (HAL Road)', 12.9580, 77.6493, 450, 140, 48, 12],
+  ['vydehi', 'Vydehi Hospital (Whitefield)', 12.9850, 77.7288, 520, 160, 54, 14],
+  ['cmh', 'CMH Hospital (Indiranagar)', 12.9742, 77.6401, 260, 72, 24, 6],
+  ['st-johns', 'St. John’s Medical College', 12.9346, 77.6103, 400, 110, 44, 10],
+  ['apollo', 'Apollo Hospital (Bannerghatta)', 12.8891, 77.5970, 350, 96, 36, 9],
+  ['bgs', 'BGS Global Hospital', 12.9031, 77.5167, 280, 78, 26, 7],
+  ['aster', 'Aster CMI Hospital', 13.0330, 77.5947, 380, 120, 40, 11],
+  ['bowring', 'Bowring & Lady Curzon Hospital', 12.9834, 77.6096, 300, 90, 28, 8],
+  ['narayana', 'Narayana Health City', 12.8011, 77.7022, 520, 180, 60, 16],
+  ['fortis', 'Fortis Hospital (Bannerghatta)', 12.8932, 77.5994, 320, 102, 34, 10],
+  ['columbia', 'Columbia Asia Hospital (Hebbal)', 13.0555, 77.5960, 240, 84, 22, 6],
+  ['sakra', 'Sakra World Hospital', 12.9141, 77.6687, 280, 92, 28, 8],
+  ['narayana-maz', 'Narayana Mazumdar Shaw', 12.8593, 77.6629, 300, 100, 30, 8],
+  ['victoria', 'Victoria Hospital', 12.9634, 77.5720, 500, 150, 52, 14],
+  ['nimhans', 'NIMHANS', 12.9430, 77.5963, 280, 96, 20, 4],
+];
+
 const rescueTeams = [
   ['team-puri-1', 'Puri Rapid Team Alpha', 19.8135, 85.8312, 18],
   ['team-puri-2', 'Pipili Water Response', 20.1146, 85.8311, 14],
@@ -278,6 +296,40 @@ const disasterEvents = [
     raw_payload: { wind_speed_kmh: 118, pressure_hpa: 968, bulletin: 'Cyclone warning for Odisha coast' },
   },
 ];
+
+async function seedHospitals() {
+  console.log('Seeding hospitals + capacity...');
+  const batch = db.batch();
+
+  hospitals.forEach(([id, name, lat, lng, bedsTotal, bedsAvailable, icuTotal, icuAvailable]) => {
+    const hospitalRef = db.collection('hospitals').doc(id);
+    batch.set(
+      hospitalRef,
+      {
+        name,
+        location: new GeoPoint(lat, lng),
+        updated_at: Timestamp.fromDate(now),
+      },
+      { merge: true },
+    );
+
+    const capacityRef = hospitalRef.collection('capacity').doc('current');
+    batch.set(
+      capacityRef,
+      {
+        beds_total: bedsTotal,
+        beds_available: bedsAvailable,
+        icu_total: icuTotal,
+        icu_available: icuAvailable,
+        updated_at: Timestamp.fromDate(now),
+      },
+      { merge: true },
+    );
+  });
+
+  await batch.commit();
+  console.log('Hospitals seeded.');
+}
 
 const suppliers = Array.from({ length: 12 }).map((_, index) => {
   const id = `supplier-${String(index + 1).padStart(3, '0')}`;
@@ -470,6 +522,7 @@ async function main() {
   await seedWarehouses(batch);
   await seedShipments(batch);
   await seedDrones(batch);
+  await seedHospitals();
   await seedRescueTeams(batch);
   await seedEvents(batch);
   await seedSuppliers(batch);

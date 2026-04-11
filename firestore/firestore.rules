@@ -131,6 +131,17 @@ service cloud.firestore {
         );
     }
 
+    // Public read for demo (judge-visible) hospital capacity.
+    match /hospitals/{hospitalId} {
+      allow read: if true;
+      allow write: if isAdmin();
+
+      match /capacity/{capacityDocId} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
+    }
+
     match /inventory-alerts/{alertId} {
       allow read: if isAdmin()
         || isFieldCoordinator()

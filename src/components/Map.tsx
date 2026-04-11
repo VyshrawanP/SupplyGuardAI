@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { useStore } from '../store/useStore';
+import { useHospitalCapacities } from '../hooks/useHospitalCapacities';
 
 type LatLng = { lat: number; lng: number };
 
@@ -345,13 +346,13 @@ function InfoContent({
 }: {
   title: string;
   subtitle: string;
-  body: string;
+  body: React.ReactNode;
 }) {
   return (
     <div className="max-w-[240px] text-slate-900">
       <h4 className="text-sm font-semibold">{title}</h4>
       <p className="text-xs font-medium text-slate-600">{subtitle}</p>
-      <p className="mt-1 text-xs">{body}</p>
+      <div className="mt-1 text-xs">{body}</div>
     </div>
   );
 }
@@ -433,6 +434,7 @@ export const Map: React.FC = () => {
   } = useStore();
 
   const [activeMarkerId, setActiveMarkerId] = useState<string | null>(null);
+  const { capacities: hospitalCapacities } = useHospitalCapacities(hospitals.map((hospital) => hospital.id));
 
   const selectedLocality = localities.find((item) => item.id === selectedLocalityId) ?? localities[0];
   const selectedMissions = missions.filter((mission) => mission.localityId === selectedLocality.id);
@@ -619,15 +621,20 @@ export const Map: React.FC = () => {
                         remove: () => setActiveMarkerId(null),
                       }}
                     >
-                      <InfoContent
-                        title={locality.name}
-                        subtitle={`${locality.zone} Bengaluru`}
-                        body={`Risk ${locality.riskScore}% • accessibility ${locality.accessibility}% • affected ${locality.affectedPopulation.toLocaleString()}`}
-                      />
-                    </Popup>
-                  ) : null}
-                </Marker>
-              </React.Fragment>
+                    <InfoContent
+                      title={locality.name}
+                      subtitle={`${locality.zone} Bengaluru`}
+                      body={
+                        <p>
+                          Risk {locality.riskScore}% • accessibility {locality.accessibility}% • affected{' '}
+                          {locality.affectedPopulation.toLocaleString()}
+                        </p>
+                      }
+                    />
+                  </Popup>
+                ) : null}
+              </Marker>
+            </React.Fragment>
             );
           })}
 
@@ -656,11 +663,33 @@ export const Map: React.FC = () => {
               >
                 {activeMarkerId === `hospital-${hospital.id}` ? (
                   <Popup eventHandlers={{ remove: () => setActiveMarkerId(null) }}>
+                    {(() => {
+                      const capacity = hospitalCapacities[hospital.id];
+                      const capacityLine =
+                        capacity && capacity !== null
+                          ? `ICU beds available: ${capacity.icu_available} (of ${capacity.icu_total}) • Beds available: ${capacity.beds_available} (of ${capacity.beds_total})`
+                          : capacity === null
+                            ? 'Capacity: no data'
+                            : 'Capacity: loading…';
+
+                      return (
                     <InfoContent
                       title={hospital.name}
                       subtitle={`Hospital • ${hospital.status}`}
-                      body={`Occupancy ${hospital.occupancy}% • medicine ${hospital.medicineStock}% • incoming ${hospital.incomingPatients}`}
+                      body={
+                        <>
+                          <p>
+                            {capacityLine}
+                          </p>
+                          <p className="mt-1">
+                            Occupancy {hospital.occupancy}% • medicine {hospital.medicineStock}% • incoming{' '}
+                            {hospital.incomingPatients}
+                          </p>
+                        </>
+                      }
                     />
+                      );
+                    })()}
                   </Popup>
                 ) : null}
               </Marker>
@@ -687,7 +716,7 @@ export const Map: React.FC = () => {
                     <InfoContent
                       title={hub.name}
                       subtitle="Relief Hub"
-                      body={`Stock ${hub.stock} • fleet ${hub.fleet}`}
+                      body={<p>Stock {hub.stock} • fleet {hub.fleet}</p>}
                     />
                   </Popup>
                 ) : null}
@@ -729,7 +758,11 @@ export const Map: React.FC = () => {
                     <InfoContent
                       title={unit.name}
                       subtitle={`${unit.service} • ${unit.status}`}
-                      body={`Readiness ${unit.readiness}% • fuel/battery ${unit.batteryOrFuel}% • ETA ${unit.etaMinutes}m`}
+                      body={
+                        <p>
+                          Readiness {unit.readiness}% • fuel/battery {unit.batteryOrFuel}% • ETA {unit.etaMinutes}m
+                        </p>
+                      }
                     />
                   </Popup>
                 ) : null}

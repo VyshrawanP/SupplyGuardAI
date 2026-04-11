@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { getIndiaScenarioPresetLabel, INDIA_SCENARIO_CUSTOM_ID } from './indiaScenarioPresets';
 
 type DisasterMode = 'flood' | 'earthquake' | 'storm' | 'heatwave' | 'compound';
 type ServiceType = 'ambulance' | 'drone' | 'food' | 'rescue' | 'evacuation' | 'utility';
@@ -141,6 +142,7 @@ export interface TimelineEvent {
 export interface SimulationSettings {
   localityFocus: string;
   disasterMode: DisasterMode;
+  scenarioPresetId: string;
   waterLevel: number;
   earthquakeLevel: number;
   stormLevel: number;
@@ -261,6 +263,7 @@ interface SupplyGuardState {
 const baseSettings: SimulationSettings = {
   localityFocus: 'indiranagar',
   disasterMode: 'compound',
+  scenarioPresetId: INDIA_SCENARIO_CUSTOM_ID,
   waterLevel: 46,
   earthquakeLevel: 34,
   stormLevel: 52,
@@ -322,6 +325,8 @@ const clamp = (value: number, min = 0, max = 100) => Math.max(min, Math.min(max,
 const distance = (a: Point, b: Point) => Math.hypot(a.lat - b.lat, a.lng - b.lng);
 
 const computeScenario = (settings: SimulationSettings) => {
+  const scenarioLabel = getIndiaScenarioPresetLabel(settings.scenarioPresetId);
+  const scenarioTag = scenarioLabel ? `${scenarioLabel} • ` : '';
   const focus = localitySeeds.find((item) => item.id === settings.localityFocus) ?? localitySeeds[0];
 
   const localities = localitySeeds.map((seed) => {
@@ -581,7 +586,7 @@ const computeScenario = (settings: SimulationSettings) => {
   ];
 
   const aiBriefing = {
-    title: `AI Scenario Copilot: ${topLocality.name} compound response`,
+    title: `AI Scenario Copilot: ${scenarioTag}${topLocality.name} response`,
     summary: `If water rises another 10%, ${topLocality.name} and its connected corridors tip into restricted access. The system is pre-positioning ambulance, drone, food, evacuation, rescue, and utility services so operations still feel live even in offline mode.`,
     confidence: Math.round(clamp(86 - routes.filter((route) => route.status === 'blocked').length * 4 + settings.medicineBuffer * 0.05)),
     priorities: [
@@ -827,7 +832,7 @@ const computeScenario = (settings: SimulationSettings) => {
       id: 'tl-1',
       minute: 'T+03',
       title: 'Sensor twin refreshed',
-      detail: `Offline map weights updated for ${settings.disasterMode} stress around ${focus.name}.`,
+      detail: `Offline map weights updated for ${scenarioTag}${settings.disasterMode} stress around ${focus.name}.`,
       tone: 'info',
     },
     {

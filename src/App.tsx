@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Dashboard } from './components/Dashboard';
 import { IntroOverlay } from './components/sections/IntroOverlay';
+import { IndiaHistoryReplay } from './components/history/IndiaHistoryReplay';
 import { useMeshAlerts } from './store/useMeshAlerts';
 
 const INTRO_SEEN_KEY = 'sg_intro_seen';
 
 export default function App() {
+  const [view, setView] = useState<'dashboard' | 'history'>('dashboard');
   const [showIntro, setShowIntro] = useState(() => {
     if (typeof window === 'undefined') return false;
     return window.sessionStorage.getItem(INTRO_SEEN_KEY) !== '1';
@@ -27,7 +29,11 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#08111f] text-white">
-      <Dashboard />
+      {view === 'history' ? (
+        <IndiaHistoryReplay onBack={() => setView('dashboard')} />
+      ) : (
+        <Dashboard onOpenHistory={() => setView('history')} />
+      )}
       <IntroOverlay visible={showIntro} />
     </div>
   );
