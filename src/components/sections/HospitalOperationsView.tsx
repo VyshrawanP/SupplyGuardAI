@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Building2, Plane, Users } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { HospitalStatus } from '../../store/useStore';
