@@ -2,6 +2,16 @@
 
 SupplyGuard AI is a disaster logistics platform for route disruption detection, drone dispatch, rescue coordination, inventory resilience, simulation, explainable decision support, and offline field operation. The repository is organized as a monorepo with independent backend services, a Flutter frontend, Firestore configuration, and deployment tooling for both Google Cloud and laptop-based offline command centers.
 
+## Google Solution Challenge (Judge-first links)
+
+- `SOLUTION_CHALLENGE.md` (SDGs, impact metrics, and demo checklist)
+- `docs/JUDGE_QUICKSTART.md` (5-minute run path)
+- `docs/ARCHITECTURE.md` (system diagram)
+- `docs/RESPONSIBLE_AI.md` (AI boundary + mitigations)
+- `docs/PRIVACY_SECURITY.md` (security posture notes)
+- `docs/VIDEO_SCRIPT.md` (3-minute script)
+- `docs/DEMO_CHECKLIST.md` (run-of-show)
+
 ## System Overview
 
 SupplyGuard AI ingests weather, traffic, and sensor signals, normalizes them into disaster events, scores operational risk deterministically, and then triggers downstream actions such as rerouting shipments, dispatching drones, notifying rescue teams, raising inventory alerts, and generating human-readable explanations. A simulation engine models scenario impacts in cloned state, and an offline server provides a field-deployable fallback using SQLite and WebSockets.
@@ -72,7 +82,7 @@ SupplyGuardAI/
 
 ## Environment Variables
 
-Copy [.env.example](/home/asus/Documents/SupplyGuardAI/.env.example) to `.env` and fill in the required values.
+Copy `.env.example` to `.env` and fill in the required values.
 
 Core groups:
 
@@ -92,7 +102,29 @@ Core groups:
 cp .env.example .env
 ```
 
-2. Install dependencies for the backend services you want to run:
+2. Install dependencies:
+
+```bash
+npm install
+```
+
+3. Start the local command console (offline-friendly demo):
+
+```bash
+npm run dev
+```
+
+Open `http://localhost:3000`.
+
+4. Optional: measurable benchmark output (repeatable):
+
+```bash
+npm run evaluate
+```
+
+## Multi-service local development (advanced)
+
+Install dependencies for the backend services you want to run:
 
 ```bash
 cd backend/api-gateway && npm install
@@ -108,13 +140,13 @@ cd ../simulation-engine && npm install
 cd ../offline-server && npm install
 ```
 
-3. Seed Firestore:
+Seed Firestore (optional):
 
 ```bash
 node scripts/seed-firestore.js
 ```
 
-4. Start selected services:
+Start selected services:
 
 ```bash
 cd backend/api-gateway && npm run dev
@@ -122,7 +154,7 @@ cd backend/ingestion-service && npm run dev
 cd backend/risk-engine && npm run dev
 ```
 
-5. Start the Flutter app:
+Start the Flutter app:
 
 ```bash
 cd frontend

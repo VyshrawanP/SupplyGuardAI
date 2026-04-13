@@ -13,14 +13,14 @@ const serviceTone: Record<string, string> = {
 
 export function ServiceOrchestration({ missions }: { missions: ServiceMission[] }) {
   return (
-    <GlassCard className="panel-surface rounded-[30px] p-5">
+    <GlassCard className="p-4 sm:p-5">
       <div className="flex items-center gap-2">
-        <RadioTower className="h-4 w-4 text-cyan-300" />
+        <RadioTower className="h-4 w-4 text-slate-400" />
         <h3 className="text-xl font-semibold">Service orchestration board</h3>
       </div>
       <div className="mt-4 grid gap-3 md:grid-cols-2">
         {missions.map((mission) => (
-          <div key={mission.id} className="rounded-[24px] border border-white/10 bg-white/5 p-4">
+          <div key={mission.id} className="sub-surface p-4">
             <div className="flex items-center justify-between gap-3">
               <div className={`rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${serviceTone[mission.service]}`}>
                 {mission.service}

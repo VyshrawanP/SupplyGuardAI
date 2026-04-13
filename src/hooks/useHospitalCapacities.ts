@@ -25,6 +25,25 @@ export function useHospitalCapacities(hospitalIds: string[]) {
       return;
     }
 
+    if (!db || import.meta.env.VITE_OFFLINE_MODE === 'true') {
+      setError(null);
+      setCapacities(
+        Object.fromEntries(
+          stableIds.map((hospitalId, index) => [
+            hospitalId,
+            {
+              beds_total: 300 + index * 40,
+              beds_available: 40 + (index % 3) * 12,
+              icu_total: 40 + (index % 4) * 6,
+              icu_available: 6 + (index % 3) * 3,
+              updated_at: null,
+            } satisfies HospitalCapacity,
+          ]),
+        ),
+      );
+      return;
+    }
+
     setError(null);
     setCapacities((current) => {
       const next: CapacityMap = { ...current };
@@ -76,4 +95,3 @@ export function useHospitalCapacities(hospitalIds: string[]) {
 
   return { capacities, error };
 }
-

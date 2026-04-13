@@ -12,18 +12,18 @@ const serviceTone: Record<string, string> = {
 
 export function ResponseMatrix({ summary }: { summary: Array<[string, number]> }) {
   return (
-    <GlassCard className="panel-surface rounded-[30px] p-5">
+    <GlassCard className="p-4 sm:p-5">
       <div className="flex items-center gap-2">
-        <Package className="h-4 w-4 text-emerald-300" />
-        <h3 className="text-xl font-semibold">Response matrix</h3>
+        <Package className="h-4 w-4 text-slate-400" />
+        <h3 className="text-lg font-semibold text-slate-100">Response matrix</h3>
       </div>
       <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {summary.map(([service, count]) => (
-          <div key={service} className="rounded-[22px] border border-white/10 bg-white/5 p-4">
+          <div key={service} className="sub-surface p-4">
             <div className={`inline-flex rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${serviceTone[service]}`}>
               {service}
             </div>
-            <p className="mt-3 text-3xl font-semibold text-white">{count}</p>
+            <p className="mt-3 text-3xl font-semibold text-slate-100">{count}</p>
             <p className="mt-1 text-sm text-slate-300">mission lanes active in current scenario</p>
           </div>
         ))}

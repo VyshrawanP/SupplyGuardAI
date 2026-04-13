@@ -10,12 +10,12 @@ export function InfoTile({
   value: string;
 }) {
   return (
-    <div className="rounded-[24px] border border-white/10 bg-white/5 p-4">
+    <div className="sub-surface p-3">
       <div className="flex items-center gap-2 text-sm text-slate-300">
-        {icon}
-        <span>{label}</span>
+        <span className="text-slate-400">{icon}</span>
+        <span className="uppercase tracking-[0.12em] text-slate-500">{label}</span>
       </div>
-      <p className="mt-3 text-lg font-semibold text-white">{value}</p>
+      <p className="mt-3 text-lg font-semibold text-slate-100">{value}</p>
     </div>
   );
 }

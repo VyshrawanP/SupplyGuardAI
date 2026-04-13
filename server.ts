@@ -125,6 +125,45 @@ async function startServer() {
     });
   });
 
+  // LAN relay fallback for offline demos (no WebRTC required).
+  // When devices can reach the local server over hotspot/Wi-Fi but WebRTC is blocked, this path still delivers alerts.
+  const relayWss = new WebSocketServer({ server, path: "/mesh-relay" });
+  const relayClients = new Map<string, import("ws").WebSocket>();
+
+  const relayBroadcast = (payload: unknown, exceptId?: string) => {
+    for (const [id, socket] of relayClients.entries()) {
+      if (exceptId && id === exceptId) continue;
+      safeSend(socket, payload);
+    }
+  };
+
+  relayWss.on("connection", (socket) => {
+    const id = randomUUID();
+    relayClients.set(id, socket);
+
+    safeSend(socket, { type: "relay-welcome", id });
+
+    socket.on("message", (raw) => {
+      let msg: any = null;
+      try {
+        msg = JSON.parse(String(raw));
+      } catch {
+        return;
+      }
+
+      if (!msg || typeof msg !== "object") return;
+
+      // Pass-through mesh wire messages (e.g. {kind:'mesh_alert', alert:{...}})
+      if (msg.kind === "mesh_alert" && msg.alert && typeof msg.alert === "object") {
+        relayBroadcast(msg, id);
+      }
+    });
+
+    socket.on("close", () => {
+      relayClients.delete(id);
+    });
+  });
+
   server.listen(PORT, "0.0.0.0", () => {
     console.log(`SupplyGuard AI Server running on http://localhost:${PORT}`);
   });

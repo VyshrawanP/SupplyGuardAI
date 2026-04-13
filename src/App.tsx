@@ -28,7 +28,7 @@ export default function App() {
   }, [startMesh]);
 
   return (
-    <div className="min-h-screen bg-[#08111f] text-white">
+    <div className="min-h-screen text-white">
       {view === 'history' ? (
         <IndiaHistoryReplay onBack={() => setView('dashboard')} />
       ) : (

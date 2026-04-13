@@ -38,12 +38,12 @@ export function LocalityIntelligence({
 
       <GlassCard className="p-4">
         <div className="flex items-center gap-2">
-          <Building2 className="h-4 w-4 text-emerald-300" />
+          <Building2 className="h-4 w-4 text-slate-400" />
           <h3 className="text-lg font-semibold">Hospital network</h3>
         </div>
         <div className="mt-3 space-y-3">
           {hospitals.map((hospital) => (
-            <div key={hospital.id} className="rounded-[22px] border border-white/10 bg-slate-950/50 p-4">
+            <div key={hospital.id} className="sub-surface p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold">{hospital.name}</p>
@@ -71,12 +71,12 @@ export function LocalityIntelligence({
 
       <GlassCard className="p-4">
         <div className="flex items-center gap-2">
-          <Plane className="h-4 w-4 text-sky-300" />
+          <Plane className="h-4 w-4 text-slate-400" />
           <h3 className="text-lg font-semibold">Fleet and route intelligence</h3>
         </div>
         <div className="mt-3 space-y-3">
           {fleet.map((unit) => (
-            <div key={unit.id} className="rounded-[22px] border border-white/10 bg-slate-950/50 p-4">
+            <div key={unit.id} className="sub-surface p-4">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-sm font-semibold">{unit.name}</p>
                 <span className={`rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${
@@ -99,7 +99,7 @@ export function LocalityIntelligence({
         </div>
         <div className="mt-3 space-y-2">
           {routes.map((route) => (
-            <div key={route.id} className="rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-slate-200">
+            <div key={route.id} className="sub-surface px-4 py-3 text-sm text-slate-200">
               <div className="flex items-center justify-between gap-3">
                 <span>{route.name}</span>
                 <span className={`rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] ${
@@ -121,7 +121,7 @@ export function LocalityIntelligence({
 
       <GlassCard className="p-4">
         <div className="flex items-center gap-2">
-          <Zap className="h-4 w-4 text-cyan-300" />
+          <Zap className="h-4 w-4 text-slate-400" />
           <h3 className="text-lg font-semibold">Command timeline</h3>
         </div>
         <div className="mt-3">

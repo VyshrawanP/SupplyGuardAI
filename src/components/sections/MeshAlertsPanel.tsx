@@ -12,7 +12,7 @@ const severityTone: Record<MeshAlertSeverity, string> = {
 };
 
 export function MeshAlertsPanel() {
-  const { status, peerCount, peerId, alerts, broadcast } = useMeshAlerts();
+  const { status, peerCount, peerId, relayConnected, alerts, broadcast } = useMeshAlerts();
   const [message, setMessage] = useState('');
   const [severity, setSeverity] = useState<MeshAlertSeverity>('high');
   const [lat, setLat] = useState('12.9716');
@@ -25,29 +25,30 @@ export function MeshAlertsPanel() {
     return 'Idle';
   }, [status]);
 
-  const badgeTone =
+  const statusTone =
     status === 'online'
-      ? 'bg-emerald-500/15 text-emerald-100 border-emerald-400/20'
+      ? 'text-green-400'
       : status === 'connecting'
-        ? 'bg-amber-500/15 text-amber-100 border-amber-400/20'
+        ? 'text-amber-400'
         : status === 'error'
-          ? 'bg-rose-500/15 text-rose-100 border-rose-400/20'
-          : 'bg-white/6 text-slate-200 border-white/10';
+          ? 'text-red-400'
+          : 'text-slate-400';
 
   return (
-    <GlassCard className="panel-surface rounded-[30px] p-5">
+    <GlassCard className="p-4 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Radio className="h-4 w-4 text-cyan-300" />
-          <h3 className="text-xl font-semibold">Offline mesh alerts</h3>
+          <Radio className="h-4 w-4 text-slate-400" />
+          <h3 className="text-lg font-semibold text-slate-100">Offline mesh alerts</h3>
         </div>
-        <div className={`rounded-full border px-3 py-1 text-xs ${badgeTone}`}>
-          {statusLabel} | {peerCount} peers
+        <div className="flex items-center gap-2 text-xs text-slate-300">
+          <span className={`ops-chip ${statusTone}`}>{statusLabel} | {peerCount} peers</span>
+          <span className="ops-chip">{relayConnected ? 'LAN relay: on' : 'LAN relay: off'}</span>
         </div>
       </div>
 
       <p className="mt-2 text-sm leading-6 text-slate-300">
-        Broadcasts alerts directly to nearby devices on the same LAN/hotspot, stores them in IndexedDB, dedupes by ID, and relays with a hop-based TTL.
+        Works without internet when devices are on the same hotspot/Wi‑Fi. Uses peer-to-peer when possible and a LAN relay fallback when WebRTC is blocked. Alerts are stored in IndexedDB and deduped by ID.
       </p>
 
       <div className="mt-4 grid gap-3 lg:grid-cols-[1fr_180px]">
@@ -114,4 +115,3 @@ export function MeshAlertsPanel() {
     </GlassCard>
   );
 }
-

@@ -8,7 +8,7 @@ export function GlassCard({
   children: React.ReactNode;
 }) {
   return (
-    <section className={`rounded-[28px] border border-white/10 bg-white/5 ${className}`}>
+    <section className={`panel-surface ${className}`}>
       {children}
     </section>
   );
