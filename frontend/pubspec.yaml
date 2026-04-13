@@ -32,6 +32,7 @@ dependencies:
   connectivity_plus: ^5.0.2
   flutter_blue_plus: ^1.27.3
   workmanager: ^0.5.2
+  permission_handler: ^11.3.1
 
 dev_dependencies:
   flutter_test:

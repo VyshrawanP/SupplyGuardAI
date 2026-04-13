@@ -4,6 +4,10 @@ import '../models/app_models.dart';
 import '../services/api_service.dart';
 import '../services/firestore_service.dart';
 import '../services/offline_sync_service.dart';
+import '../services/mesh/mesh_service.dart';
+import '../services/mesh/mesh_transport_ble_channel.dart';
+import '../services/mesh/mesh_transport_noop.dart';
+import 'package:flutter/foundation.dart';
 
 final apiServiceProvider = Provider<ApiService>((ref) {
   return ApiService();
@@ -16,6 +20,35 @@ final firestoreServiceProvider = Provider<FirestoreService>((ref) {
 final offlineSyncServiceProvider = ChangeNotifierProvider<OfflineSyncService>((ref) {
   final service = OfflineSyncService();
   ref.onDispose(service.dispose);
+  return service;
+});
+
+final meshServiceProvider = ChangeNotifierProvider<MeshService>((ref) {
+  final transport = (kIsWeb || defaultTargetPlatform != TargetPlatform.android)
+      ? MeshNoopTransport()
+      : MeshBleChannelTransport();
+  final service = MeshService(transport: transport);
+
+  // Fire and forget initialization; the UI can show status while it connects.
+  () async {
+    await service.initialize();
+    try {
+      await service.start();
+    } catch {
+      // Surface transport errors through status; keep app usable.
+    }
+  }();
+
+  ref.onDispose(() {
+    service.stop();
+    if (transport is MeshBleChannelTransport) {
+      transport.dispose();
+    }
+    if (transport is MeshNoopTransport) {
+      transport.dispose();
+    }
+  });
+
   return service;
 });
 

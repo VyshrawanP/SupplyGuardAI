@@ -28,16 +28,14 @@ const seenIds = new Set<string>();
 
 let client: MeshClient | null = null;
 let relayWs: WebSocket | null = null;
+let relaySse: EventSource | null = null;
 
 const buildSignalingUrl = () => {
   const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   return `${proto}//${window.location.host}/mesh`;
 };
 
-const buildRelayUrl = () => {
-  const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  return `${proto}//${window.location.host}/mesh-relay`;
-};
+const buildRelayEventsUrl = () => `${window.location.origin}/mesh-relay/events`;
 
 const normalizeAlert = (alert: MeshAlert): MeshAlert => ({
   ...alert,
@@ -66,24 +64,22 @@ export const useMeshAlerts = create<MeshAlertsState>((set, get) => ({
       set({ alerts: existing.map(({ receivedAt: _receivedAt, ...alert }) => alert) });
 
       // Start LAN relay first (more reliable than WebRTC in constrained environments).
-      relayWs = new WebSocket(buildRelayUrl());
-      relayWs.onopen = () => {
-        set({ relayConnected: true });
-      };
-      relayWs.onclose = () => {
+      relaySse = new EventSource(buildRelayEventsUrl());
+      relaySse.onopen = () => set({ relayConnected: true });
+      relaySse.onerror = () => {
+        // EventSource will retry; we still keep WebRTC mesh running.
         set({ relayConnected: false, relayClientId: null });
       };
-      relayWs.onerror = () => {
-        // keep quiet; we can still run WebRTC mesh
-      };
-      relayWs.onmessage = async (event) => {
+      relaySse.onmessage = async (event) => {
         const raw = String(event.data ?? '');
-        let parsed: any = null;
-        try {
-          parsed = JSON.parse(raw);
-        } catch {
-          return;
-        }
+        const parsed = (() => {
+          try {
+            return JSON.parse(raw);
+          } catch {
+            return null;
+          }
+        })();
+        if (!parsed) return;
 
         if (parsed?.type === 'relay-welcome' && typeof parsed.id === 'string') {
           set({ relayClientId: parsed.id });
@@ -166,6 +162,8 @@ export const useMeshAlerts = create<MeshAlertsState>((set, get) => ({
     client = null;
     relayWs?.close();
     relayWs = null;
+    relaySse?.close();
+    relaySse = null;
     set({ status: 'idle', started: false, peerCount: 0, peerId: null, relayConnected: false, relayClientId: null });
   },
   broadcast: async ({ message, severity, location, ttl = 4 }) => {
@@ -193,8 +191,13 @@ export const useMeshAlerts = create<MeshAlertsState>((set, get) => ({
 
     const msg: MeshWireMessage = { kind: 'mesh_alert', alert };
     client?.broadcastWireMessage(msg);
-    if (relayWs?.readyState === WebSocket.OPEN) {
-      relayWs.send(JSON.stringify(msg));
+    const relayClientId = get().relayClientId;
+    if (get().relayConnected && relayClientId) {
+      void fetch(`/mesh-relay/publish?sender=${encodeURIComponent(relayClientId)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(msg),
+      });
     }
   },
 }));

@@ -126,42 +126,55 @@ async function startServer() {
   });
 
   // LAN relay fallback for offline demos (no WebRTC required).
-  // When devices can reach the local server over hotspot/Wi-Fi but WebRTC is blocked, this path still delivers alerts.
-  const relayWss = new WebSocketServer({ server, path: "/mesh-relay" });
-  const relayClients = new Map<string, import("ws").WebSocket>();
+  // When devices can reach the local server over hotspot/Wi-Fi but WebRTC is blocked,
+  // this path still delivers alerts. Implemented as SSE + HTTP POST for maximum browser reliability.
+  const relaySseClients = new Map<string, import("express").Response>();
 
-  const relayBroadcast = (payload: unknown, exceptId?: string) => {
-    for (const [id, socket] of relayClients.entries()) {
+  const relaySseSend = (res: import("express").Response, payload: unknown) => {
+    res.write(`data: ${JSON.stringify(payload)}\n\n`);
+  };
+
+  const relaySseBroadcast = (payload: unknown, exceptId?: string) => {
+    for (const [id, res] of relaySseClients.entries()) {
       if (exceptId && id === exceptId) continue;
-      safeSend(socket, payload);
+      relaySseSend(res, payload);
     }
   };
 
-  relayWss.on("connection", (socket) => {
+  app.get("/mesh-relay/events", (req, res) => {
+    res.status(200);
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache, no-transform");
+    res.setHeader("Connection", "keep-alive");
+    // Helps in local reverse-proxy situations
+    res.setHeader("X-Accel-Buffering", "no");
+
     const id = randomUUID();
-    relayClients.set(id, socket);
+    relaySseClients.set(id, res);
 
-    safeSend(socket, { type: "relay-welcome", id });
+    relaySseSend(res, { type: "relay-welcome", id });
+    const heartbeat = setInterval(() => {
+      // keep connection alive
+      res.write(`: ping ${Date.now()}\n\n`);
+    }, 15_000);
 
-    socket.on("message", (raw) => {
-      let msg: any = null;
-      try {
-        msg = JSON.parse(String(raw));
-      } catch {
-        return;
-      }
-
-      if (!msg || typeof msg !== "object") return;
-
-      // Pass-through mesh wire messages (e.g. {kind:'mesh_alert', alert:{...}})
-      if (msg.kind === "mesh_alert" && msg.alert && typeof msg.alert === "object") {
-        relayBroadcast(msg, id);
-      }
+    req.on("close", () => {
+      clearInterval(heartbeat);
+      relaySseClients.delete(id);
     });
+  });
 
-    socket.on("close", () => {
-      relayClients.delete(id);
-    });
+  app.post("/mesh-relay/publish", (req, res) => {
+    const msg = req.body;
+    const senderId = typeof req.query.sender === "string" ? req.query.sender : undefined;
+
+    // Pass-through mesh wire messages (e.g. {kind:'mesh_alert', alert:{...}})
+    if (msg?.kind === "mesh_alert" && msg.alert && typeof msg.alert === "object") {
+      relaySseBroadcast(msg, senderId);
+      return res.json({ ok: true });
+    }
+
+    return res.status(400).json({ ok: false, error: "invalid_payload" });
   });
 
   server.listen(PORT, "0.0.0.0", () => {

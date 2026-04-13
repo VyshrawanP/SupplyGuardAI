@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Radio, Send } from 'lucide-react';
 import { GlassCard } from '../ui/GlassCard';
 import { useMeshAlerts } from '../../store/useMeshAlerts';
@@ -12,11 +12,17 @@ const severityTone: Record<MeshAlertSeverity, string> = {
 };
 
 export function MeshAlertsPanel() {
-  const { status, peerCount, peerId, relayConnected, alerts, broadcast } = useMeshAlerts();
+  const { status, started, start, peerCount, peerId, relayConnected, alerts, broadcast } = useMeshAlerts();
   const [message, setMessage] = useState('');
   const [severity, setSeverity] = useState<MeshAlertSeverity>('high');
   const [lat, setLat] = useState('12.9716');
   const [lng, setLng] = useState('77.5946');
+
+  useEffect(() => {
+    if (!started) {
+      void start();
+    }
+  }, [started, start]);
 
   const statusLabel = useMemo(() => {
     if (status === 'connecting') return 'Connecting';
@@ -44,6 +50,7 @@ export function MeshAlertsPanel() {
         <div className="flex items-center gap-2 text-xs text-slate-300">
           <span className={`ops-chip ${statusTone}`}>{statusLabel} | {peerCount} peers</span>
           <span className="ops-chip">{relayConnected ? 'LAN relay: on' : 'LAN relay: off'}</span>
+          <span className="ops-chip">{navigator.onLine ? 'Internet: on' : 'Internet: off'}</span>
         </div>
       </div>
 

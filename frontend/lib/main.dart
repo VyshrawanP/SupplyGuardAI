@@ -10,6 +10,7 @@ import 'features/alerts/alert_panel_screen.dart';
 import 'features/auth/auth_gate.dart';
 import 'features/inventory/inventory_dashboard_screen.dart';
 import 'features/map/command_map_screen.dart';
+import 'features/mesh/mesh_console_screen.dart';
 import 'features/metrics/metrics_screen.dart';
 import 'features/simulation/simulation_console_screen.dart';
 import 'features/survivor_report/survivor_report_screen.dart';
@@ -68,6 +69,7 @@ class _AppShellState extends ConsumerState<AppShell> {
     CommandMapScreen(),
     AlertPanelScreen(),
     InventoryDashboardScreen(),
+    MeshConsoleScreen(),
     SimulationConsoleScreen(),
     MetricsScreen(),
   ];
@@ -131,6 +133,7 @@ class _AppShellState extends ConsumerState<AppShell> {
           NavigationDestination(icon: Icon(Icons.map_outlined), label: 'Map'),
           NavigationDestination(icon: Icon(Icons.warning_amber_outlined), label: 'Alerts'),
           NavigationDestination(icon: Icon(Icons.inventory_2_outlined), label: 'Inventory'),
+          NavigationDestination(icon: Icon(Icons.router_outlined), label: 'Mesh'),
           NavigationDestination(icon: Icon(Icons.science_outlined), label: 'Simulation'),
           NavigationDestination(icon: Icon(Icons.query_stats_outlined), label: 'Metrics'),
         ],
