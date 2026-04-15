@@ -13,6 +13,7 @@ import 'package:firebase_core_web/firebase_core_web.dart';
 import 'package:firebase_messaging_web/firebase_messaging_web.dart';
 import 'package:flutter_blue_plus_web/flutter_blue_plus_web.dart';
 import 'package:google_maps_flutter_web/google_maps_flutter_web.dart';
+import 'package:permission_handler_html/permission_handler_html.dart';
 import 'package:shared_preferences_web/shared_preferences_web.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 
@@ -25,6 +26,7 @@ void registerPlugins([final Registrar? pluginRegistrar]) {
   FirebaseMessagingWeb.registerWith(registrar);
   FlutterBluePlusWeb.registerWith(registrar);
   GoogleMapsPlugin.registerWith(registrar);
+  WebPermissionHandler.registerWith(registrar);
   SharedPreferencesPlugin.registerWith(registrar);
   registrar.registerMessageHandler();
 }

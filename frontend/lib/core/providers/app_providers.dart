@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 import '../models/app_models.dart';
 import '../services/api_service.dart';
@@ -34,7 +35,7 @@ final meshServiceProvider = ChangeNotifierProvider<MeshService>((ref) {
     await service.initialize();
     try {
       await service.start();
-    } catch {
+    } catch (_) {
       // Surface transport errors through status; keep app usable.
     }
   }();

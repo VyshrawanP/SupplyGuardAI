@@ -10,36 +10,36 @@ dependencies:
   flutter:
     sdk: flutter
 
-  firebase_core: ^2.24.0
-  firebase_auth: ^4.15.0
-  cloud_firestore: ^4.13.0
-  firebase_messaging: ^14.7.5
+  firebase_core: ^4.7.0
+  firebase_auth: ^6.4.0
+  cloud_firestore: ^6.3.0
+  firebase_messaging: ^16.2.0
 
   google_maps_flutter: ^2.5.0
-  flutter_riverpod: ^2.4.9
+  flutter_riverpod: ^3.3.1
   dio: ^5.4.0
   sqflite: ^2.3.0
   shared_preferences: ^2.2.2
-  fl_chart: ^0.66.0
+  fl_chart: ^1.2.0
   flutter_animate: ^4.5.0
   shimmer: ^3.0.0
   cached_network_image: ^3.3.0
-  flutter_local_notifications: ^16.3.0
+  flutter_local_notifications: ^21.0.0
   uuid: ^4.2.2
-  intl: ^0.18.1
+  intl: ^0.20.2
   json_annotation: ^4.8.1
-  freezed_annotation: ^2.4.1
-  connectivity_plus: ^5.0.2
-  flutter_blue_plus: ^1.27.3
-  workmanager: ^0.5.2
-  permission_handler: ^11.3.1
+  freezed_annotation: ^3.1.0
+  connectivity_plus: ^7.1.1
+  flutter_blue_plus: ^2.2.1
+  workmanager: ^0.9.0+3
+  permission_handler: ^12.0.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^3.0.2
+  flutter_lints: ^6.0.0
   build_runner: ^2.4.13
-  freezed: ^2.5.7
+  freezed: ^3.2.5
   json_serializable: ^6.8.0
 
 flutter:

@@ -61,17 +61,17 @@ class MeshPacket {
 
   static MeshPacket fromJson(Map<String, dynamic> json) {
     return MeshPacket(
-      id: String(json['id'] ?? ''),
-      type: String(json['type'] ?? ''),
-      originDeviceId: String(json['originDeviceId'] ?? ''),
-      targetDeviceId: json['targetDeviceId'] == null ? null : String(json['targetDeviceId']),
-      timestampIso: String(json['timestampIso'] ?? DateTime.now().toIso8601String()),
+      id: json['id']?.toString() ?? '',
+      type: json['type']?.toString() ?? '',
+      originDeviceId: json['originDeviceId']?.toString() ?? '',
+      targetDeviceId: json['targetDeviceId']?.toString(),
+      timestampIso: json['timestampIso']?.toString() ?? DateTime.now().toIso8601String(),
       ttl: (json['ttl'] is num) ? (json['ttl'] as num).toInt() : 0,
       hops: (json['hops'] is num) ? (json['hops'] as num).toInt() : 0,
       payload: (json['payload'] is Map<String, dynamic>)
           ? (json['payload'] as Map<String, dynamic>)
           : <String, dynamic>{},
-      trace: (json['trace'] is List) ? (json['trace'] as List).map((e) => String(e)).toList() : null,
+      trace: (json['trace'] is List) ? (json['trace'] as List).map((e) => e.toString()).toList(growable: false) : null,
     );
   }
 
@@ -107,4 +107,3 @@ class MeshAlertMessage {
   final int hops;
   final List<String>? trace;
 }
-

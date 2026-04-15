@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 import '../../core/models/app_models.dart';
 import '../../core/providers/app_providers.dart';
+import '../../core/widgets/sg_app_bar.dart';
 import 'widgets/ai_explanation_modal.dart';
 
 class AlertPanelScreen extends ConsumerWidget {
@@ -12,16 +14,17 @@ class AlertPanelScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final alertsAsync = ref.watch(alertsProvider);
-    final explanations = ref.watch(explanationsProvider).valueOrNull ?? const [];
+    final explanations = ref.watch(explanationsProvider).asData?.value ?? const [];
     final filter = ref.watch(_filterProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Alert Panel'),
+      appBar: SgAppBar(
+        title: 'System alerts',
+        kicker: 'SupplyGuard AI',
         actions: [
           TextButton(
             onPressed: () async {
-              final alerts = alertsAsync.valueOrNull ?? const [];
+              final alerts = alertsAsync.asData?.value ?? const [];
               for (final alert in alerts.where((item) => !item.acknowledged)) {
                 await ref.read(firestoreServiceProvider).acknowledgeAlert(alert.id);
               }

@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/models/app_models.dart';
 import '../../core/providers/app_providers.dart';
+import '../../core/theme/sg_theme.dart';
+import '../../core/widgets/sg_app_bar.dart';
 
 class InventoryDashboardScreen extends ConsumerWidget {
   const InventoryDashboardScreen({super.key});
@@ -14,7 +16,7 @@ class InventoryDashboardScreen extends ConsumerWidget {
     final selectedWarehouseId = ref.watch(selectedWarehouseIdProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Inventory Dashboard')),
+      appBar: const SgAppBar(title: 'Inventory dashboard', kicker: 'SupplyGuard AI'),
       body: warehousesAsync.when(
         data: (warehouses) {
           final selected = selectedWarehouseId ?? (warehouses.isNotEmpty ? warehouses.first.id : null);
@@ -40,16 +42,25 @@ class InventoryDashboardScreen extends ConsumerWidget {
                         margin: const EdgeInsets.only(right: 12),
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: isSelected ? Theme.of(context).colorScheme.primaryContainer : Theme.of(context).cardColor,
+                          color: isSelected ? const Color(0xFF0B2531) : SgColors.surface,
                           borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: SgColors.border),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(warehouse.name, maxLines: 2, overflow: TextOverflow.ellipsis),
+                            Text(
+                              warehouse.name,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
                             const Spacer(),
-                            Text(warehouse.city),
-                            Text('Assigned pop: ${warehouse.assignedPopulation}'),
+                            Text(warehouse.city, style: Theme.of(context).textTheme.bodySmall),
+                            Text(
+                              'Assigned pop: ${warehouse.assignedPopulation}',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
                           ],
                         ),
                       ),

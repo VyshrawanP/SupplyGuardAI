@@ -23,12 +23,24 @@ class OfflineSyncService extends ChangeNotifier {
   List<String> get meshPeers => List.unmodifiable(_meshPeers);
 
   Future<void> initialize() async {
-    await Workmanager().initialize(_backgroundCallback, isInDebugMode: kDebugMode);
-    await Workmanager().registerPeriodicTask(
-      'supplyguard-background-sync',
-      'backgroundSync',
-      frequency: const Duration(hours: 1),
-    );
+    // Workmanager uses `dart:io Platform` internally and does not support web.
+    // Keep web usable by skipping background sync setup.
+    if (kIsWeb) return;
+
+    final supported = defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS;
+    if (!supported) return;
+
+    try {
+      await Workmanager().initialize(_backgroundCallback, isInDebugMode: kDebugMode);
+      await Workmanager().registerPeriodicTask(
+        'supplyguard-background-sync',
+        'backgroundSync',
+        frequency: const Duration(hours: 1),
+      );
+    } catch (_) {
+      // If background registration fails (permissions/unsupported), keep foreground sync working.
+    }
   }
 
   Future<void> _onConnectivityChanged(dynamic results) async {
@@ -88,7 +100,7 @@ class OfflineSyncService extends ChangeNotifier {
 
   Future<void> scanMeshPeers() async {
     _meshPeers.clear();
-    final devices = await FlutterBluePlus.connectedDevices;
+    final devices = FlutterBluePlus.connectedDevices;
     _meshPeers.addAll(devices.map((device) => device.platformName).where((name) => name.isNotEmpty));
     notifyListeners();
   }

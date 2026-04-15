@@ -147,7 +147,7 @@ class MeshService extends ChangeNotifier {
       if (decoded is! Map<String, dynamic>) return;
       final packet = MeshPacket.fromJson(decoded);
       _handlePacket(packet, fromPeerId: frame.fromPeerId);
-    } catch {
+    } catch (_) {
       // ignore malformed frames
     }
   }
@@ -243,7 +243,7 @@ class MeshService extends ChangeNotifier {
       final packet = MeshPacket.fromJson(json);
       if (packet.type != 'alert') return null;
       return _toAlertMessage(packet);
-    } catch {
+    } catch (_) {
       return null;
     }
   }
@@ -296,4 +296,3 @@ class MeshService extends ChangeNotifier {
     unawaited(_persist());
   }
 }
-

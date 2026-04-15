@@ -4,6 +4,8 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../../core/providers/app_providers.dart';
 import '../../core/services/mesh/mesh_models.dart';
+import '../../core/theme/sg_theme.dart';
+import '../../core/widgets/sg_app_bar.dart';
 
 class MeshConsoleScreen extends ConsumerStatefulWidget {
   const MeshConsoleScreen({super.key});
@@ -49,8 +51,9 @@ class _MeshConsoleScreenState extends ConsumerState<MeshConsoleScreen> {
     final mesh = ref.watch(meshServiceProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Device Mesh'),
+      appBar: SgAppBar(
+        title: 'Offline mesh relay',
+        kicker: 'SupplyGuard AI',
         actions: [
           IconButton(
             tooltip: 'Restart Mesh',
@@ -87,7 +90,7 @@ class _MeshConsoleScreenState extends ConsumerState<MeshConsoleScreen> {
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<MeshSeverity>(
-                    value: _severity,
+                    initialValue: _severity,
                     decoration: const InputDecoration(
                       labelText: 'Severity',
                       border: OutlineInputBorder(),
@@ -187,7 +190,7 @@ class _StatusCard extends StatelessWidget {
             const SizedBox(height: 6),
             const Text(
               'Tip: Multi-hop needs multiple phones nearby with Bluetooth on. Use a Target Device ID to require ACK, otherwise it floods locally.',
-              style: TextStyle(color: Colors.black54),
+              style: TextStyle(color: SgColors.textSecondary),
             ),
             const SizedBox(height: 8),
             Wrap(

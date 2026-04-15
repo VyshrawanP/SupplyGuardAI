@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../core/providers/app_providers.dart';
+import '../../core/widgets/sg_app_bar.dart';
 import 'widgets/drone_detail_sheet.dart';
 import 'widgets/shipment_detail_sheet.dart';
 
@@ -22,17 +23,28 @@ class CommandMapScreen extends ConsumerWidget {
     final eventsAsync = ref.watch(disasterEventsProvider);
     final layers = ref.watch(mapLayerVisibilityProvider);
 
+    final shipments = shipmentsAsync.asData?.value ?? const [];
+    final drones = dronesAsync.asData?.value ?? const [];
+    final clusters = clustersAsync.asData?.value ?? const [];
+    final teams = teamsAsync.asData?.value ?? const [];
+    final warehouses = warehousesAsync.asData?.value ?? const [];
+    final events = eventsAsync.asData?.value ?? const [];
+
     return Scaffold(
+      appBar: const SgAppBar(
+        title: 'Bengaluru street operations',
+        kicker: 'SupplyGuard AI',
+      ),
       body: Stack(
         children: [
           GoogleMap(
             initialCameraPosition: const CameraPosition(
-              target: LatLng(20.2961, 85.8245),
-              zoom: 7,
+              target: LatLng(12.9716, 77.5946),
+              zoom: 11,
             ),
             markers: {
               if (layers['shipments'] == true)
-                ...shipmentsAsync.valueOrNull?.map((shipment) => Marker(
+                ...shipments.map((shipment) => Marker(
                       markerId: MarkerId('shipment-${shipment.id}'),
                       position: LatLng(
                         shipment.currentPosition.latitude,
@@ -45,10 +57,9 @@ class CommandMapScreen extends ConsumerWidget {
                           builder: (_) => ShipmentDetailSheet(shipment: shipment),
                         );
                       },
-                    )) ??
-                    const <Marker>{},
+                    )),
               if (layers['drones'] == true)
-                ...dronesAsync.valueOrNull?.map((drone) => Marker(
+                ...drones.map((drone) => Marker(
                       markerId: MarkerId('drone-${drone.id}'),
                       position: LatLng(
                         drone.currentPosition.latitude,
@@ -62,36 +73,32 @@ class CommandMapScreen extends ConsumerWidget {
                         );
                       },
                       icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-                    )) ??
-                    const <Marker>{},
+                    )),
               if (layers['survivors'] == true)
-                ...clustersAsync.valueOrNull?.map((cluster) => Marker(
+                ...clusters.map((cluster) => Marker(
                       markerId: MarkerId('cluster-${cluster.clusterId}'),
                       position: LatLng(cluster.center.latitude, cluster.center.longitude),
                       icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRose),
                       infoWindow: InfoWindow(title: 'Cluster ${cluster.clusterId}'),
-                    )) ??
-                    const <Marker>{},
+                    )),
               if (layers['teams'] == true)
-                ...teamsAsync.valueOrNull?.map((team) => Marker(
+                ...teams.map((team) => Marker(
                       markerId: MarkerId('team-${team.id}'),
                       position: LatLng(team.currentPosition.latitude, team.currentPosition.longitude),
                       icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
                       infoWindow: InfoWindow(title: team.name),
-                    )) ??
-                    const <Marker>{},
+                    )),
               if (layers['warehouses'] == true)
-                ...warehousesAsync.valueOrNull?.map((warehouse) => Marker(
+                ...warehouses.map((warehouse) => Marker(
                       markerId: MarkerId('warehouse-${warehouse.id}'),
                       position: LatLng(warehouse.location.latitude, warehouse.location.longitude),
                       icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
                       infoWindow: InfoWindow(title: warehouse.name),
-                    )) ??
-                    const <Marker>{},
+                    )),
             },
             polylines: {
               if (layers['routes'] == true)
-                ...shipmentsAsync.valueOrNull?.map((shipment) => Polyline(
+                ...shipments.map((shipment) => Polyline(
                       polylineId: PolylineId('route-${shipment.id}'),
                       points: shipment.polyline
                           .map((point) => LatLng(point.latitude, point.longitude))
@@ -102,30 +109,27 @@ class CommandMapScreen extends ConsumerWidget {
                               ? Colors.blue
                               : Colors.green,
                       width: 4,
-                    )) ??
-                    const <Polyline>{},
+                    )),
             },
             polygons: {
               if (layers['riskZones'] == true)
-                ...eventsAsync.valueOrNull?.map((event) => Polygon(
+                ...events.map((event) => Polygon(
                       polygonId: PolygonId('event-${event.id}'),
                       points: _circleApproximation(event.coordinates, event.affectedRadiusKm),
                       fillColor: Colors.red.withOpacity(0.16),
                       strokeColor: Colors.red,
                       strokeWidth: 2,
-                    )) ??
-                    const <Polygon>{},
+                    )),
             },
             circles: {
               if (layers['survivors'] == true)
-                ...clustersAsync.valueOrNull?.map((cluster) => Circle(
+                ...clusters.map((cluster) => Circle(
                       circleId: CircleId(cluster.clusterId),
                       center: LatLng(cluster.center.latitude, cluster.center.longitude),
                       radius: 500,
                       fillColor: Colors.red.withOpacity(0.16),
                       strokeColor: Colors.redAccent,
-                    )) ??
-                    const <Circle>{},
+                    )),
             },
           ),
           Positioned(

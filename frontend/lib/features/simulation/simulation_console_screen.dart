@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
-import '../../core/models/app_models.dart';
 import '../../core/providers/app_providers.dart';
+import '../../core/widgets/sg_app_bar.dart';
 
 class SimulationConsoleScreen extends ConsumerStatefulWidget {
   const SimulationConsoleScreen({super.key});
@@ -22,7 +23,7 @@ class _SimulationConsoleScreenState extends ConsumerState<SimulationConsoleScree
     final scenario = ref.watch(_scenarioProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Simulation Console')),
+      appBar: const SgAppBar(title: 'Simulation console', kicker: 'SupplyGuard AI'),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

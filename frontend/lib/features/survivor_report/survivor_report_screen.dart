@@ -5,6 +5,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../core/models/app_models.dart';
 import '../../core/providers/app_providers.dart';
+import '../../core/widgets/sg_app_bar.dart';
 
 class SurvivorReportScreen extends ConsumerStatefulWidget {
   const SurvivorReportScreen({super.key});
@@ -22,14 +23,14 @@ class _SurvivorReportScreenState extends ConsumerState<SurvivorReportScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Survivor Self-Report')),
+      appBar: const SgAppBar(title: 'Survivor self-report', kicker: 'SupplyGuard AI'),
       body: Column(
         children: [
           Expanded(
             child: GoogleMap(
               initialCameraPosition: const CameraPosition(
-                target: LatLng(20.2961, 85.8245),
-                zoom: 7,
+                target: LatLng(12.9716, 77.5946),
+                zoom: 12,
               ),
               onTap: (position) => setState(() => _selected = position),
               markers: {

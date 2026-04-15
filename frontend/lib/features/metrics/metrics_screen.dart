@@ -3,19 +3,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers/app_providers.dart';
+import '../../core/widgets/sg_app_bar.dart';
 
 class MetricsScreen extends ConsumerWidget {
   const MetricsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final shipments = ref.watch(shipmentsProvider).valueOrNull ?? const [];
-    final drones = ref.watch(dronesProvider).valueOrNull ?? const [];
-    final alerts = ref.watch(alertsProvider).valueOrNull ?? const [];
-    final clusters = ref.watch(clustersProvider).valueOrNull ?? const [];
+    final shipments = ref.watch(shipmentsProvider).asData?.value ?? const [];
+    final drones = ref.watch(dronesProvider).asData?.value ?? const [];
+    final alerts = ref.watch(alertsProvider).asData?.value ?? const [];
+    final clusters = ref.watch(clustersProvider).asData?.value ?? const [];
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Metrics Dashboard')),
+      appBar: const SgAppBar(title: 'Impact metrics', kicker: 'SupplyGuard AI'),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

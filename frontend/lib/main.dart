@@ -2,8 +2,10 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/providers/app_providers.dart';
+import 'core/theme/sg_theme.dart';
 import 'core/services/firestore_service.dart';
 import '../firebase_options.dart';
 import 'features/alerts/alert_panel_screen.dart';
@@ -43,10 +45,7 @@ class _SupplyGuardAppState extends ConsumerState<SupplyGuardApp> {
 
     return MaterialApp(
       title: 'SupplyGuard AI',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF005F73)),
-        useMaterial3: true,
-      ),
+      theme: SupplyGuardTheme.dark(),
       routes: {
         '/report': (_) => const SurvivorReportScreen(),
       },
@@ -81,7 +80,22 @@ class _AppShellState extends ConsumerState<AppShell> {
     return Scaffold(
       body: Stack(
         children: [
-          Positioned.fill(child: _screens[_index]),
+          Positioned.fill(
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    SgColors.shellTop,
+                    SgColors.shellMid,
+                    SgColors.shellBottom,
+                  ],
+                ),
+              ),
+              child: _screens[_index],
+            ),
+          ),
           Positioned(
             top: 16,
             right: 16,
@@ -94,10 +108,10 @@ class _AppShellState extends ConsumerState<AppShell> {
                     DecoratedBox(
                       decoration: BoxDecoration(
                         color: offlineSync.isOffline
-                            ? Colors.red.shade700
+                            ? SgColors.critical
                             : offlineSync.isSyncing
-                                ? Colors.amber.shade700
-                                : Colors.green.shade700,
+                                ? SgColors.warning
+                                : SgColors.success,
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: Padding(
@@ -114,9 +128,19 @@ class _AppShellState extends ConsumerState<AppShell> {
                     ),
                     const SizedBox(width: 8),
                     CircleAvatar(
+                      backgroundColor: const Color(0x22FFFFFF),
                       child: IconButton(
                         icon: const Icon(Icons.logout),
-                        onPressed: () => FirebaseAuth.instance.signOut(),
+                        onPressed: () async {
+                          // In offline observer mode FirebaseAuth may be unavailable on web.
+                          try {
+                            await FirebaseAuth.instance.signOut();
+                          } catch (_) {}
+                          try {
+                            final prefs = await SharedPreferences.getInstance();
+                            await prefs.remove('sg_offline_observer_enabled_v1');
+                          } catch (_) {}
+                        },
                       ),
                     ),
                   ],
