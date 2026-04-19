@@ -1,5 +1,4 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.supplyguard_ai_frontend">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!-- BLE mesh requires Bluetooth + (on many Android versions) Location. -->
     <uses-permission android:name="android.permission.BLUETOOTH" />

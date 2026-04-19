@@ -20,6 +20,12 @@
       "languageVersion": "3.9"
     },
     {
+      "name": "archive",
+      "rootUri": "file:///home/asus/.pub-cache/hosted/pub.dev/archive-4.0.9",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
       "name": "args",
       "rootUri": "file:///home/asus/.pub-cache/hosted/pub.dev/args-2.7.0",
       "packageUri": "lib/",
@@ -188,10 +194,16 @@
       "languageVersion": "3.4"
     },
     {
-      "name": "csslib",
-      "rootUri": "file:///home/asus/.pub-cache/hosted/pub.dev/csslib-1.0.2",
+      "name": "dart_earcut",
+      "rootUri": "file:///home/asus/.pub-cache/hosted/pub.dev/dart_earcut-1.2.0",
       "packageUri": "lib/",
-      "languageVersion": "3.1"
+      "languageVersion": "3.0"
+    },
+    {
+      "name": "dart_polylabel2",
+      "rootUri": "file:///home/asus/.pub-cache/hosted/pub.dev/dart_polylabel2-1.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.6"
     },
     {
       "name": "dart_style",
@@ -398,10 +410,10 @@
       "languageVersion": "3.10"
     },
     {
-      "name": "flutter_plugin_android_lifecycle",
-      "rootUri": "file:///home/asus/.pub-cache/hosted/pub.dev/flutter_plugin_android_lifecycle-2.0.34",
+      "name": "flutter_map",
+      "rootUri": "file:///home/asus/.pub-cache/hosted/pub.dev/flutter_map-8.3.0",
       "packageUri": "lib/",
-      "languageVersion": "3.9"
+      "languageVersion": "3.6"
     },
     {
       "name": "flutter_riverpod",
@@ -452,42 +464,6 @@
       "languageVersion": "3.3"
     },
     {
-      "name": "google_maps",
-      "rootUri": "file:///home/asus/.pub-cache/hosted/pub.dev/google_maps-8.2.0",
-      "packageUri": "lib/",
-      "languageVersion": "3.4"
-    },
-    {
-      "name": "google_maps_flutter",
-      "rootUri": "file:///home/asus/.pub-cache/hosted/pub.dev/google_maps_flutter-2.17.0",
-      "packageUri": "lib/",
-      "languageVersion": "3.10"
-    },
-    {
-      "name": "google_maps_flutter_android",
-      "rootUri": "file:///home/asus/.pub-cache/hosted/pub.dev/google_maps_flutter_android-2.19.6",
-      "packageUri": "lib/",
-      "languageVersion": "3.9"
-    },
-    {
-      "name": "google_maps_flutter_ios",
-      "rootUri": "file:///home/asus/.pub-cache/hosted/pub.dev/google_maps_flutter_ios-2.18.1",
-      "packageUri": "lib/",
-      "languageVersion": "3.10"
-    },
-    {
-      "name": "google_maps_flutter_platform_interface",
-      "rootUri": "file:///home/asus/.pub-cache/hosted/pub.dev/google_maps_flutter_platform_interface-2.15.0",
-      "packageUri": "lib/",
-      "languageVersion": "3.9"
-    },
-    {
-      "name": "google_maps_flutter_web",
-      "rootUri": "file:///home/asus/.pub-cache/hosted/pub.dev/google_maps_flutter_web-0.6.2",
-      "packageUri": "lib/",
-      "languageVersion": "3.9"
-    },
-    {
       "name": "graphs",
       "rootUri": "file:///home/asus/.pub-cache/hosted/pub.dev/graphs-2.3.2",
       "packageUri": "lib/",
@@ -498,12 +474,6 @@
       "rootUri": "file:///home/asus/.pub-cache/hosted/pub.dev/hooks-1.0.2",
       "packageUri": "lib/",
       "languageVersion": "3.10"
-    },
-    {
-      "name": "html",
-      "rootUri": "file:///home/asus/.pub-cache/hosted/pub.dev/html-0.15.6",
-      "packageUri": "lib/",
-      "languageVersion": "3.2"
     },
     {
       "name": "http",
@@ -560,6 +530,12 @@
       "languageVersion": "3.9"
     },
     {
+      "name": "latlong2",
+      "rootUri": "file:///home/asus/.pub-cache/hosted/pub.dev/latlong2-0.9.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
       "name": "leak_tracker",
       "rootUri": "file:///home/asus/.pub-cache/hosted/pub.dev/leak_tracker-11.0.2",
       "packageUri": "lib/",
@@ -606,6 +582,12 @@
       "rootUri": "file:///home/asus/.pub-cache/hosted/pub.dev/meta-1.17.0",
       "packageUri": "lib/",
       "languageVersion": "3.5"
+    },
+    {
+      "name": "mgrs_dart",
+      "rootUri": "file:///home/asus/.pub-cache/hosted/pub.dev/mgrs_dart-3.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
     },
     {
       "name": "mime",
@@ -752,6 +734,18 @@
       "languageVersion": "3.4"
     },
     {
+      "name": "posix",
+      "rootUri": "file:///home/asus/.pub-cache/hosted/pub.dev/posix-6.5.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
+      "name": "proj4dart",
+      "rootUri": "file:///home/asus/.pub-cache/hosted/pub.dev/proj4dart-3.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
       "name": "pub_semver",
       "rootUri": "file:///home/asus/.pub-cache/hosted/pub.dev/pub_semver-2.2.0",
       "packageUri": "lib/",
@@ -772,12 +766,6 @@
     {
       "name": "rxdart",
       "rootUri": "file:///home/asus/.pub-cache/hosted/pub.dev/rxdart-0.28.0",
-      "packageUri": "lib/",
-      "languageVersion": "2.12"
-    },
-    {
-      "name": "sanitize_html",
-      "rootUri": "file:///home/asus/.pub-cache/hosted/pub.dev/sanitize_html-2.1.0",
       "packageUri": "lib/",
       "languageVersion": "2.12"
     },
@@ -852,6 +840,12 @@
       "rootUri": "file:///home/asus/.pub-cache/hosted/pub.dev/shimmer-3.0.0",
       "packageUri": "lib/",
       "languageVersion": "2.17"
+    },
+    {
+      "name": "simple_sparse_list",
+      "rootUri": "file:///home/asus/.pub-cache/hosted/pub.dev/simple_sparse_list-0.1.4",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
     },
     {
       "name": "sky_engine",
@@ -992,6 +986,12 @@
       "languageVersion": "3.5"
     },
     {
+      "name": "unicode",
+      "rootUri": "file:///home/asus/.pub-cache/hosted/pub.dev/unicode-1.1.9",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
       "name": "uuid",
       "rootUri": "file:///home/asus/.pub-cache/hosted/pub.dev/uuid-4.5.3",
       "packageUri": "lib/",
@@ -1038,6 +1038,12 @@
       "rootUri": "file:///home/asus/.pub-cache/hosted/pub.dev/webkit_inspection_protocol-1.2.1",
       "packageUri": "lib/",
       "languageVersion": "3.0"
+    },
+    {
+      "name": "wkt_parser",
+      "rootUri": "file:///home/asus/.pub-cache/hosted/pub.dev/wkt_parser-2.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
     },
     {
       "name": "workmanager",

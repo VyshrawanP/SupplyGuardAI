@@ -1,9 +1,10 @@
 import 'dart:math' as math;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../../core/providers/app_providers.dart';
 import '../../core/widgets/sg_app_bar.dart';
@@ -37,100 +38,124 @@ class CommandMapScreen extends ConsumerWidget {
       ),
       body: Stack(
         children: [
-          GoogleMap(
-            initialCameraPosition: const CameraPosition(
-              target: LatLng(12.9716, 77.5946),
-              zoom: 11,
+          FlutterMap(
+            options: MapOptions(
+              initialCenter: const LatLng(12.9716, 77.5946),
+              initialZoom: 11,
+              interactionOptions: const InteractionOptions(flags: InteractiveFlag.all),
             ),
-            markers: {
-              if (layers['shipments'] == true)
-                ...shipments.map((shipment) => Marker(
-                      markerId: MarkerId('shipment-${shipment.id}'),
-                      position: LatLng(
-                        shipment.currentPosition.latitude,
-                        shipment.currentPosition.longitude,
-                      ),
-                      infoWindow: InfoWindow(title: shipment.id),
-                      onTap: () {
-                        showModalBottomSheet<void>(
-                          context: context,
-                          builder: (_) => ShipmentDetailSheet(shipment: shipment),
-                        );
-                      },
-                    )),
-              if (layers['drones'] == true)
-                ...drones.map((drone) => Marker(
-                      markerId: MarkerId('drone-${drone.id}'),
-                      position: LatLng(
-                        drone.currentPosition.latitude,
-                        drone.currentPosition.longitude,
-                      ),
-                      infoWindow: InfoWindow(title: drone.id),
-                      onTap: () {
-                        showModalBottomSheet<void>(
-                          context: context,
-                          builder: (_) => DroneDetailSheet(drone: drone),
-                        );
-                      },
-                      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-                    )),
-              if (layers['survivors'] == true)
-                ...clusters.map((cluster) => Marker(
-                      markerId: MarkerId('cluster-${cluster.clusterId}'),
-                      position: LatLng(cluster.center.latitude, cluster.center.longitude),
-                      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRose),
-                      infoWindow: InfoWindow(title: 'Cluster ${cluster.clusterId}'),
-                    )),
-              if (layers['teams'] == true)
-                ...teams.map((team) => Marker(
-                      markerId: MarkerId('team-${team.id}'),
-                      position: LatLng(team.currentPosition.latitude, team.currentPosition.longitude),
-                      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-                      infoWindow: InfoWindow(title: team.name),
-                    )),
-              if (layers['warehouses'] == true)
-                ...warehouses.map((warehouse) => Marker(
-                      markerId: MarkerId('warehouse-${warehouse.id}'),
-                      position: LatLng(warehouse.location.latitude, warehouse.location.longitude),
-                      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
-                      infoWindow: InfoWindow(title: warehouse.name),
-                    )),
-            },
-            polylines: {
-              if (layers['routes'] == true)
-                ...shipments.map((shipment) => Polyline(
-                      polylineId: PolylineId('route-${shipment.id}'),
-                      points: shipment.polyline
-                          .map((point) => LatLng(point.latitude, point.longitude))
-                          .toList(),
-                      color: shipment.status == 'DELAYED'
-                          ? Colors.red
-                          : shipment.status == 'AT_RISK'
-                              ? Colors.blue
-                              : Colors.green,
-                      width: 4,
-                    )),
-            },
-            polygons: {
+            children: [
+              TileLayer(
+                urlTemplate: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+                subdomains: const ['a', 'b', 'c', 'd'],
+                userAgentPackageName: 'supplyguard_ai_frontend',
+                retinaMode: true,
+              ),
               if (layers['riskZones'] == true)
-                ...events.map((event) => Polygon(
-                      polygonId: PolygonId('event-${event.id}'),
-                      points: _circleApproximation(event.coordinates, event.affectedRadiusKm),
-                      fillColor: Colors.red.withOpacity(0.16),
-                      strokeColor: Colors.red,
-                      strokeWidth: 2,
-                    )),
-            },
-            circles: {
+                PolygonLayer(
+                  polygons: events
+                      .map(
+                        (event) => Polygon(
+                          points: _circleApproximation(event.coordinates, event.affectedRadiusKm),
+                          color: Colors.red.withOpacity(0.14),
+                          borderColor: Colors.red.withOpacity(0.9),
+                          borderStrokeWidth: 2,
+                        ),
+                      )
+                      .toList(growable: false),
+                ),
+              if (layers['routes'] == true)
+                PolylineLayer(
+                  polylines: shipments
+                      .map(
+                        (shipment) => Polyline(
+                          points: shipment.polyline
+                              .map((point) => LatLng(point.latitude, point.longitude))
+                              .toList(growable: false),
+                          color: shipment.status == 'DELAYED'
+                              ? Colors.red
+                              : shipment.status == 'AT_RISK'
+                                  ? Colors.blue
+                                  : Colors.green,
+                          strokeWidth: 4,
+                        ),
+                      )
+                      .toList(growable: false),
+                ),
+              MarkerLayer(
+                markers: [
+                  if (layers['shipments'] == true)
+                    ...shipments.map((shipment) => _marker(
+                          id: 'shipment-${shipment.id}',
+                          point: LatLng(shipment.currentPosition.latitude, shipment.currentPosition.longitude),
+                          color: const Color(0xFF67E8F9),
+                          icon: Icons.local_shipping_outlined,
+                          onTap: () {
+                            showModalBottomSheet<void>(
+                              context: context,
+                              builder: (_) => ShipmentDetailSheet(shipment: shipment),
+                            );
+                          },
+                        )),
+                  if (layers['drones'] == true)
+                    ...drones.map((drone) => _marker(
+                          id: 'drone-${drone.id}',
+                          point: LatLng(drone.currentPosition.latitude, drone.currentPosition.longitude),
+                          color: const Color(0xFF3B82F6),
+                          icon: Icons.flight_outlined,
+                          onTap: () {
+                            showModalBottomSheet<void>(
+                              context: context,
+                              builder: (_) => DroneDetailSheet(drone: drone),
+                            );
+                          },
+                        )),
+                  if (layers['survivors'] == true)
+                    ...clusters.map((cluster) => _marker(
+                          id: 'cluster-${cluster.clusterId}',
+                          point: LatLng(cluster.center.latitude, cluster.center.longitude),
+                          color: const Color(0xFFFB7185),
+                          icon: Icons.sos_outlined,
+                          onTap: () {},
+                        )),
+                  if (layers['teams'] == true)
+                    ...teams.map((team) => _marker(
+                          id: 'team-${team.id}',
+                          point: LatLng(team.currentPosition.latitude, team.currentPosition.longitude),
+                          color: const Color(0xFF34D399),
+                          icon: Icons.person_pin_circle_outlined,
+                          onTap: () {},
+                        )),
+                  if (layers['warehouses'] == true)
+                    ...warehouses.map((warehouse) => _marker(
+                          id: 'warehouse-${warehouse.id}',
+                          point: LatLng(warehouse.location.latitude, warehouse.location.longitude),
+                          color: const Color(0xFFF59E0B),
+                          icon: Icons.warehouse_outlined,
+                          onTap: () {},
+                        )),
+                ],
+              ),
               if (layers['survivors'] == true)
-                ...clusters.map((cluster) => Circle(
-                      circleId: CircleId(cluster.clusterId),
-                      center: LatLng(cluster.center.latitude, cluster.center.longitude),
-                      radius: 500,
-                      fillColor: Colors.red.withOpacity(0.16),
-                      strokeColor: Colors.redAccent,
-                    )),
-            },
+                CircleLayer(
+                  circles: clusters
+                      .map(
+                        (cluster) => CircleMarker(
+                          point: LatLng(cluster.center.latitude, cluster.center.longitude),
+                          useRadiusInMeter: true,
+                          radius: 500,
+                          color: Colors.red.withOpacity(0.12),
+                          borderColor: Colors.redAccent.withOpacity(0.6),
+                          borderStrokeWidth: 2,
+                        ),
+                      )
+                      .toList(growable: false),
+                ),
+              const SimpleAttributionWidget(
+                source: Text('© OpenStreetMap, © CARTO'),
+                alignment: Alignment.bottomRight,
+              ),
+            ],
           ),
           Positioned(
             top: 56,
@@ -162,6 +187,32 @@ class CommandMapScreen extends ConsumerWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  static Marker _marker({
+    required String id,
+    required LatLng point,
+    required Color color,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return Marker(
+      key: ValueKey(id),
+      point: point,
+      width: 44,
+      height: 44,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.18),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: color.withOpacity(0.7)),
+          ),
+          child: Icon(icon, color: color, size: 20),
+        ),
       ),
     );
   }

@@ -19,11 +19,12 @@
         "flutter_animate",
         "flutter_blue_plus",
         "flutter_local_notifications",
+        "flutter_map",
         "flutter_riverpod",
         "freezed_annotation",
-        "google_maps_flutter",
         "intl",
         "json_annotation",
+        "latlong2",
         "permission_handler",
         "shared_preferences",
         "shimmer",
@@ -315,14 +316,28 @@
       ]
     },
     {
-      "name": "google_maps_flutter",
-      "version": "2.17.0",
+      "name": "latlong2",
+      "version": "0.9.1",
       "dependencies": [
+        "intl"
+      ]
+    },
+    {
+      "name": "flutter_map",
+      "version": "8.3.0",
+      "dependencies": [
+        "async",
+        "collection",
+        "dart_earcut",
+        "dart_polylabel2",
         "flutter",
-        "google_maps_flutter_android",
-        "google_maps_flutter_ios",
-        "google_maps_flutter_platform_interface",
-        "google_maps_flutter_web"
+        "http",
+        "latlong2",
+        "meta",
+        "path",
+        "path_provider",
+        "proj4dart",
+        "uuid"
       ]
     },
     {
@@ -1139,47 +1154,48 @@
       ]
     },
     {
-      "name": "google_maps_flutter_web",
-      "version": "0.6.2",
+      "name": "proj4dart",
+      "version": "3.0.0",
       "dependencies": [
-        "collection",
+        "meta",
+        "mgrs_dart",
+        "wkt_parser"
+      ]
+    },
+    {
+      "name": "path_provider",
+      "version": "2.1.5",
+      "dependencies": [
         "flutter",
-        "flutter_web_plugins",
-        "google_maps",
-        "google_maps_flutter_platform_interface",
-        "sanitize_html",
-        "stream_transform",
+        "path_provider_android",
+        "path_provider_foundation",
+        "path_provider_linux",
+        "path_provider_platform_interface",
+        "path_provider_windows"
+      ]
+    },
+    {
+      "name": "http",
+      "version": "1.6.0",
+      "dependencies": [
+        "async",
+        "http_parser",
+        "meta",
         "web"
       ]
     },
     {
-      "name": "google_maps_flutter_platform_interface",
-      "version": "2.15.0",
+      "name": "dart_polylabel2",
+      "version": "1.0.0",
       "dependencies": [
         "collection",
-        "flutter",
-        "plugin_platform_interface",
-        "stream_transform"
+        "meta"
       ]
     },
     {
-      "name": "google_maps_flutter_ios",
-      "version": "2.18.1",
-      "dependencies": [
-        "flutter",
-        "google_maps_flutter_platform_interface",
-        "stream_transform"
-      ]
-    },
-    {
-      "name": "google_maps_flutter_android",
-      "version": "2.19.6",
-      "dependencies": [
-        "flutter",
-        "flutter_plugin_android_lifecycle",
-        "google_maps_flutter_platform_interface",
-        "stream_transform"
-      ]
+      "name": "dart_earcut",
+      "version": "1.2.0",
+      "dependencies": []
     },
     {
       "name": "firebase_messaging_web",
@@ -1415,16 +1431,6 @@
       ]
     },
     {
-      "name": "http",
-      "version": "1.6.0",
-      "dependencies": [
-        "async",
-        "http_parser",
-        "meta",
-        "web"
-      ]
-    },
-    {
       "name": "xml",
       "version": "6.6.1",
       "dependencies": [
@@ -1444,18 +1450,6 @@
       "dependencies": [
         "meta",
         "path"
-      ]
-    },
-    {
-      "name": "path_provider",
-      "version": "2.1.5",
-      "dependencies": [
-        "flutter",
-        "path_provider_android",
-        "path_provider_foundation",
-        "path_provider_linux",
-        "path_provider_platform_interface",
-        "path_provider_windows"
       ]
     },
     {
@@ -1530,26 +1524,35 @@
       ]
     },
     {
-      "name": "sanitize_html",
-      "version": "2.1.0",
+      "name": "wkt_parser",
+      "version": "2.0.0",
+      "dependencies": []
+    },
+    {
+      "name": "mgrs_dart",
+      "version": "3.0.0",
       "dependencies": [
-        "html",
-        "meta"
+        "unicode"
       ]
     },
     {
-      "name": "google_maps",
-      "version": "8.2.0",
+      "name": "path_provider_foundation",
+      "version": "2.6.0",
       "dependencies": [
-        "meta",
-        "web"
+        "ffi",
+        "flutter",
+        "objective_c",
+        "path_provider_platform_interface"
       ]
     },
     {
-      "name": "flutter_plugin_android_lifecycle",
-      "version": "2.0.34",
+      "name": "path_provider_android",
+      "version": "2.3.1",
       "dependencies": [
-        "flutter"
+        "flutter",
+        "jni",
+        "jni_flutter",
+        "path_provider_platform_interface"
       ]
     },
     {
@@ -1574,26 +1577,6 @@
       "dependencies": [
         "collection",
         "meta"
-      ]
-    },
-    {
-      "name": "path_provider_foundation",
-      "version": "2.6.0",
-      "dependencies": [
-        "ffi",
-        "flutter",
-        "objective_c",
-        "path_provider_platform_interface"
-      ]
-    },
-    {
-      "name": "path_provider_android",
-      "version": "2.3.1",
-      "dependencies": [
-        "flutter",
-        "jni",
-        "jni_flutter",
-        "path_provider_platform_interface"
       ]
     },
     {
@@ -1673,11 +1656,11 @@
       ]
     },
     {
-      "name": "html",
-      "version": "0.15.6",
+      "name": "unicode",
+      "version": "1.1.9",
       "dependencies": [
-        "csslib",
-        "source_span"
+        "archive",
+        "simple_sparse_list"
       ]
     },
     {
@@ -1747,10 +1730,16 @@
       ]
     },
     {
-      "name": "csslib",
-      "version": "1.0.2",
+      "name": "simple_sparse_list",
+      "version": "0.1.4",
+      "dependencies": []
+    },
+    {
+      "name": "archive",
+      "version": "4.0.9",
       "dependencies": [
-        "source_span"
+        "path",
+        "posix"
       ]
     },
     {
@@ -1783,6 +1772,15 @@
       "dependencies": [
         "collection",
         "hooks"
+      ]
+    },
+    {
+      "name": "posix",
+      "version": "6.5.0",
+      "dependencies": [
+        "ffi",
+        "meta",
+        "path"
       ]
     }
   ],

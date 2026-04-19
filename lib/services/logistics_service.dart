@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:latlong2/latlong.dart';
 
 class Shipment {
   final String id;
@@ -17,7 +17,6 @@ class LogisticsService extends ChangeNotifier {
   List<Shipment> shipments = [];
   Shipment? selectedShipment;
   String? aiExplanation;
-  Set<Marker> markers = {};
 
   LogisticsService() {
     _loadInitialData();
@@ -29,18 +28,10 @@ class LogisticsService extends ChangeNotifier {
       Shipment(id: 'SG-9021', currentPos: const LatLng(23.2599, 77.4126), riskScore: 12, delay: 0, status: 'on-time'),
       Shipment(id: 'SG-4412', currentPos: const LatLng(13.0000, 79.0000), riskScore: 68, delay: 45, status: 'delayed'),
     ];
-    _updateMarkers();
   }
 
-  void _updateMarkers() {
-    markers = shipments.map((s) => Marker(
-      markerId: MarkerId(s.id),
-      position: s.currentPos,
-      onTap: () {
-        selectedShipment = s;
-        notifyListeners();
-      },
-    )).toSet();
+  void selectShipment(Shipment shipment) {
+    selectedShipment = shipment;
     notifyListeners();
   }
 
@@ -57,7 +48,7 @@ class LogisticsService extends ChangeNotifier {
 
   Future<void> triggerSimulation(String type) async {
     // Call backend API
-    final response = await http.post(
+    await http.post(
       Uri.parse('/api/simulate'),
       body: jsonEncode({'eventType': type, 'intensity': 80}),
       headers: {'Content-Type': 'application/json'},

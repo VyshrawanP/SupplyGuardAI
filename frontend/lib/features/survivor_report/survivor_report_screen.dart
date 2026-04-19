@@ -1,7 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../../core/models/app_models.dart';
 import '../../core/providers/app_providers.dart';
@@ -27,19 +28,42 @@ class _SurvivorReportScreenState extends ConsumerState<SurvivorReportScreen> {
       body: Column(
         children: [
           Expanded(
-            child: GoogleMap(
-              initialCameraPosition: const CameraPosition(
-                target: LatLng(12.9716, 77.5946),
-                zoom: 12,
+            child: FlutterMap(
+              options: MapOptions(
+                initialCenter: const LatLng(12.9716, 77.5946),
+                initialZoom: 12,
+                onTap: (_, point) => setState(() => _selected = point),
               ),
-              onTap: (position) => setState(() => _selected = position),
-              markers: {
-                if (_selected != null)
-                  Marker(
-                    markerId: const MarkerId('selected'),
-                    position: _selected!,
-                  ),
-              },
+              children: [
+                TileLayer(
+                  urlTemplate: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+                  subdomains: const ['a', 'b', 'c', 'd'],
+                  userAgentPackageName: 'supplyguard_ai_frontend',
+                  retinaMode: true,
+                ),
+                MarkerLayer(
+                  markers: [
+                    if (_selected != null)
+                      Marker(
+                        point: _selected!,
+                        width: 44,
+                        height: 44,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.red.withOpacity(0.18),
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(color: Colors.red.withOpacity(0.7)),
+                          ),
+                          child: const Icon(Icons.location_on_outlined, color: Colors.red),
+                        ),
+                      ),
+                  ],
+                ),
+                const SimpleAttributionWidget(
+                  source: Text('© OpenStreetMap, © CARTO'),
+                  alignment: Alignment.bottomRight,
+                ),
+              ],
             ),
           ),
           Padding(

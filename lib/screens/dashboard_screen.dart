@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:supply_guard_ai/services/logistics_service.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -12,8 +13,6 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  GoogleMapController? _mapController;
-
   @override
   Widget build(BuildContext context) {
     final service = Provider.of<LogisticsService>(context);
@@ -95,14 +94,50 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildMap(LogisticsService service) {
-    return GoogleMap(
-      initialCameraPosition: const CameraPosition(
-        target: LatLng(20.5937, 78.9629),
-        zoom: 5,
+    const center = LatLng(12.9716, 77.5946); // Bengaluru
+
+    return FlutterMap(
+      options: MapOptions(
+        initialCenter: center,
+        initialZoom: 11,
+        interactionOptions: const InteractionOptions(flags: InteractiveFlag.all),
       ),
-      onMapCreated: (controller) => _mapController = controller,
-      markers: service.markers,
-      style: _mapStyle, // Dark mode map style
+      children: [
+        TileLayer(
+          urlTemplate: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+          subdomains: const ['a', 'b', 'c', 'd'],
+          userAgentPackageName: 'supply_guard_ai',
+        ),
+        MarkerLayer(
+          markers: service.shipments.map((shipment) {
+            final color = shipment.status == 'delayed' ? Colors.orange : Colors.cyanAccent;
+            return Marker(
+              point: shipment.currentPos,
+              width: 42,
+              height: 42,
+              child: GestureDetector(
+                onTap: () => service.selectShipment(shipment),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.18),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(color: color.withOpacity(0.65)),
+                  ),
+                  child: Icon(
+                    LucideIcons.truck,
+                    color: color,
+                    size: 18,
+                  ),
+                ),
+              ),
+            );
+          }).toList(growable: false),
+        ),
+        const SimpleAttributionWidget(
+          source: Text('© OpenStreetMap, © CARTO'),
+          alignment: Alignment.bottomRight,
+        ),
+      ],
     );
   }
 
@@ -203,6 +238,4 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildShipmentsSection(LogisticsService service) => Container();
   Widget _buildTopBar() => Container();
   Widget _buildMetricsOverlay() => Container();
-
-  final String _mapStyle = "[]"; // Dark mode JSON
 }
