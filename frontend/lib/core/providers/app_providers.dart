@@ -7,8 +7,11 @@ import '../services/firestore_service.dart';
 import '../services/offline_sync_service.dart';
 import '../services/mesh/mesh_service.dart';
 import '../services/mesh/mesh_transport_ble_channel.dart';
+import '../services/mesh/mesh_transport_composite.dart';
+import '../services/mesh/mesh_transport_lan_relay.dart';
 import '../services/mesh/mesh_transport_noop.dart';
 import 'package:flutter/foundation.dart';
+import '../config/app_config.dart';
 
 final apiServiceProvider = Provider<ApiService>((ref) {
   return ApiService();
@@ -25,9 +28,14 @@ final offlineSyncServiceProvider = ChangeNotifierProvider<OfflineSyncService>((r
 });
 
 final meshServiceProvider = ChangeNotifierProvider<MeshService>((ref) {
-  final transport = (kIsWeb || defaultTargetPlatform != TargetPlatform.android)
+  final transport = (kIsWeb)
       ? MeshNoopTransport()
-      : MeshBleChannelTransport();
+      : (defaultTargetPlatform != TargetPlatform.android)
+          ? MeshNoopTransport()
+          : MeshCompositeTransport([
+              MeshBleChannelTransport(),
+              MeshLanRelayTransport(baseUrl: AppConfig.lanRelayBaseUrl),
+            ]);
   final service = MeshService(transport: transport);
 
   // Fire and forget initialization; the UI can show status while it connects.
@@ -42,12 +50,10 @@ final meshServiceProvider = ChangeNotifierProvider<MeshService>((ref) {
 
   ref.onDispose(() {
     service.stop();
-    if (transport is MeshBleChannelTransport) {
-      transport.dispose();
-    }
-    if (transport is MeshNoopTransport) {
-      transport.dispose();
-    }
+    if (transport is MeshBleChannelTransport) transport.dispose();
+    if (transport is MeshLanRelayTransport) transport.dispose();
+    if (transport is MeshCompositeTransport) transport.dispose();
+    if (transport is MeshNoopTransport) transport.dispose();
   });
 
   return service;

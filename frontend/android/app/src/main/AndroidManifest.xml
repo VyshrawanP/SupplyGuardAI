@@ -10,10 +10,14 @@
     <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 
+    <!-- LAN relay + backend sync -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:name="${applicationName}"
         android:label="SupplyGuard AI"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:usesCleartextTraffic="true">
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -35,4 +39,3 @@
             android:value="2" />
     </application>
 </manifest>
-

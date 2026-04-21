@@ -3,10 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'core/config/app_mode.dart';
 import 'core/providers/app_providers.dart';
 import 'core/theme/sg_theme.dart';
 import 'features/alerts/alert_panel_screen.dart';
 import 'features/auth/auth_gate.dart';
+import 'features/field/rescue_team_home_screen.dart';
+import 'features/field/role_select_screen.dart';
+import 'features/field/victim_home_screen.dart';
 import 'features/inventory/inventory_dashboard_screen.dart';
 import 'features/map/command_map_screen.dart';
 import 'features/mesh/mesh_console_screen.dart';
@@ -22,14 +26,45 @@ class SupplyGuardApp extends ConsumerStatefulWidget {
 }
 
 class _SupplyGuardAppState extends ConsumerState<SupplyGuardApp> {
+  AppMode? _mode;
+  bool _modeLoaded = false;
+
   @override
   void initState() {
     super.initState();
     Future<void>.microtask(() => ref.read(offlineSyncServiceProvider).initialize());
+    Future<void>.microtask(_loadMode);
+  }
+
+  Future<void> _loadMode() async {
+    final resolved = await AppModeConfig.resolve();
+    if (!mounted) return;
+    setState(() {
+      _mode = resolved;
+      _modeLoaded = true;
+    });
+  }
+
+  Future<void> _setMode(AppMode mode) async {
+    await AppModeConfig.persist(mode);
+    if (!mounted) return;
+    setState(() {
+      _mode = mode;
+      _modeLoaded = true;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    if (!_modeLoaded) {
+      return MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'SupplyGuard AI',
+        theme: SupplyGuardTheme.dark(),
+        home: const Scaffold(body: Center(child: CircularProgressIndicator())),
+      );
+    }
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'SupplyGuard AI',
@@ -37,7 +72,22 @@ class _SupplyGuardAppState extends ConsumerState<SupplyGuardApp> {
       routes: {
         '/report': (_) => const SurvivorReportScreen(),
       },
-      home: const AuthGate(child: AppShell()),
+      home: () {
+        final mode = _mode;
+        if (mode == null) {
+          return RoleSelectScreen(onSelect: _setMode);
+        }
+
+        if (mode == AppMode.commandCenter) {
+          return const AuthGate(child: AppShell());
+        }
+
+        if (mode == AppMode.victim) {
+          return const VictimHomeScreen();
+        }
+
+        return const RescueTeamHomeScreen();
+      }(),
     );
   }
 }
@@ -64,6 +114,8 @@ class _AppShellState extends ConsumerState<AppShell> {
   @override
   Widget build(BuildContext context) {
     final offlineSync = ref.watch(offlineSyncServiceProvider);
+    // Ensure mesh runs even if the operator never opens the Mesh tab.
+    ref.watch(meshServiceProvider);
 
     return Scaffold(
       body: Stack(
@@ -152,4 +204,3 @@ class _AppShellState extends ConsumerState<AppShell> {
     );
   }
 }
-

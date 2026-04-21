@@ -18,6 +18,66 @@ async function startServer() {
 
   app.use(express.json());
 
+  // LAN relay fallback for offline demos (no WebRTC required).
+  // Important: these routes must be registered BEFORE the Vite middleware.
+  // Vite's SPA middleware can otherwise swallow unknown paths and return 404,
+  // which breaks Android clients trying to connect to `/mesh-relay/events`.
+  const relaySseClients = new Map<string, { res: import("express").Response; device?: string }>();
+
+  const relaySseSend = (res: import("express").Response, payload: unknown) => {
+    res.write(`data: ${JSON.stringify(payload)}\n\n`);
+  };
+
+  const relaySseBroadcast = (payload: unknown, exceptId?: string) => {
+    for (const [id, entry] of relaySseClients.entries()) {
+      if (exceptId && id === exceptId) continue;
+      relaySseSend(entry.res, payload);
+    }
+  };
+
+  app.get("/mesh-relay/events", (req, res) => {
+    res.status(200);
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache, no-transform");
+    res.setHeader("Connection", "keep-alive");
+    // Helps in local reverse-proxy situations
+    res.setHeader("X-Accel-Buffering", "no");
+
+    const device = typeof req.query.device === "string" ? req.query.device : undefined;
+    const id = randomUUID();
+    relaySseClients.set(id, { res, device });
+
+    const peers = Array.from(relaySseClients.entries())
+      .filter(([peerId]) => peerId !== id)
+      .map(([peerId, entry]) => ({ id: peerId, device: entry.device ?? null }));
+
+    relaySseSend(res, { type: "relay-welcome", id, peers });
+    relaySseBroadcast({ type: "relay-peer-join", id, device: device ?? null }, id);
+    const heartbeat = setInterval(() => {
+      // keep connection alive
+      res.write(`: ping ${Date.now()}\n\n`);
+    }, 15_000);
+
+    req.on("close", () => {
+      clearInterval(heartbeat);
+      relaySseClients.delete(id);
+      relaySseBroadcast({ type: "relay-peer-leave", id }, id);
+    });
+  });
+
+  app.post("/mesh-relay/publish", (req, res) => {
+    const msg = req.body;
+    const senderId = typeof req.query.sender === "string" ? req.query.sender : undefined;
+
+    // Pass-through mesh wire messages (e.g. {kind:'mesh_alert', alert:{...}})
+    if (msg?.kind === "mesh_alert" && msg.alert && typeof msg.alert === "object") {
+      relaySseBroadcast(msg, senderId);
+      return res.json({ ok: true });
+    }
+
+    return res.status(400).json({ ok: false, error: "invalid_payload" });
+  });
+
   // --- Risk Scoring Engine ---
   // Computes risk score (0-100) and expected delay (minutes)
   app.post("/api/predict-risk", (req, res) => {
@@ -123,58 +183,6 @@ async function startServer() {
       clients.delete(id);
       broadcast({ type: "peer-leave", id }, id);
     });
-  });
-
-  // LAN relay fallback for offline demos (no WebRTC required).
-  // When devices can reach the local server over hotspot/Wi-Fi but WebRTC is blocked,
-  // this path still delivers alerts. Implemented as SSE + HTTP POST for maximum browser reliability.
-  const relaySseClients = new Map<string, import("express").Response>();
-
-  const relaySseSend = (res: import("express").Response, payload: unknown) => {
-    res.write(`data: ${JSON.stringify(payload)}\n\n`);
-  };
-
-  const relaySseBroadcast = (payload: unknown, exceptId?: string) => {
-    for (const [id, res] of relaySseClients.entries()) {
-      if (exceptId && id === exceptId) continue;
-      relaySseSend(res, payload);
-    }
-  };
-
-  app.get("/mesh-relay/events", (req, res) => {
-    res.status(200);
-    res.setHeader("Content-Type", "text/event-stream");
-    res.setHeader("Cache-Control", "no-cache, no-transform");
-    res.setHeader("Connection", "keep-alive");
-    // Helps in local reverse-proxy situations
-    res.setHeader("X-Accel-Buffering", "no");
-
-    const id = randomUUID();
-    relaySseClients.set(id, res);
-
-    relaySseSend(res, { type: "relay-welcome", id });
-    const heartbeat = setInterval(() => {
-      // keep connection alive
-      res.write(`: ping ${Date.now()}\n\n`);
-    }, 15_000);
-
-    req.on("close", () => {
-      clearInterval(heartbeat);
-      relaySseClients.delete(id);
-    });
-  });
-
-  app.post("/mesh-relay/publish", (req, res) => {
-    const msg = req.body;
-    const senderId = typeof req.query.sender === "string" ? req.query.sender : undefined;
-
-    // Pass-through mesh wire messages (e.g. {kind:'mesh_alert', alert:{...}})
-    if (msg?.kind === "mesh_alert" && msg.alert && typeof msg.alert === "object") {
-      relaySseBroadcast(msg, senderId);
-      return res.json({ ok: true });
-    }
-
-    return res.status(400).json({ ok: false, error: "invalid_payload" });
   });
 
   server.listen(PORT, "0.0.0.0", () => {

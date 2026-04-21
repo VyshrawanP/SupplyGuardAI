@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/providers/app_providers.dart';
 import '../../core/services/mesh/mesh_models.dart';
@@ -18,11 +19,13 @@ class _MeshConsoleScreenState extends ConsumerState<MeshConsoleScreen> {
   final _message = TextEditingController();
   final _targetDeviceId = TextEditingController();
   MeshSeverity _severity = MeshSeverity.high;
+  final _relayBaseUrl = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     Future<void>.microtask(_ensurePermissions);
+    Future<void>.microtask(_loadRelayUrl);
   }
 
   Future<void> _ensurePermissions() async {
@@ -39,10 +42,29 @@ class _MeshConsoleScreenState extends ConsumerState<MeshConsoleScreen> {
     }
   }
 
+  Future<void> _loadRelayUrl() async {
+    final prefs = await SharedPreferences.getInstance();
+    final value = prefs.getString('sg_lan_relay_base_url_v1') ?? '';
+    if (!mounted) return;
+    _relayBaseUrl.text = value;
+    setState(() {});
+  }
+
+  Future<void> _saveRelayUrl() async {
+    final prefs = await SharedPreferences.getInstance();
+    final value = _relayBaseUrl.text.trim();
+    if (value.isEmpty) {
+      await prefs.remove('sg_lan_relay_base_url_v1');
+    } else {
+      await prefs.setString('sg_lan_relay_base_url_v1', value);
+    }
+  }
+
   @override
   void dispose() {
     _message.dispose();
     _targetDeviceId.dispose();
+    _relayBaseUrl.dispose();
     super.dispose();
   }
 
@@ -69,6 +91,53 @@ class _MeshConsoleScreenState extends ConsumerState<MeshConsoleScreen> {
         padding: const EdgeInsets.all(16),
         children: [
           _StatusCard(mesh: mesh),
+          const SizedBox(height: 12),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('LAN Relay (Hotspot/Wi-Fi)', style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Set this to your laptop server, for example: http://192.168.233.49:3000',
+                    style: TextStyle(color: SgColors.textSecondary),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _relayBaseUrl,
+                    decoration: const InputDecoration(
+                      labelText: 'LAN Relay Base URL',
+                      hintText: 'http://<laptop-ip>:3000',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.url,
+                    onSubmitted: (_) async {
+                      await _saveRelayUrl();
+                      await mesh.stop();
+                      await mesh.start();
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: () async {
+                            await _saveRelayUrl();
+                            await mesh.stop();
+                            await mesh.start();
+                          },
+                          child: const Text('Apply + Restart Mesh'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
           const SizedBox(height: 12),
           Card(
             child: Padding(
@@ -187,6 +256,10 @@ class _StatusCard extends StatelessWidget {
             Text('Running: ${status.running}'),
             Text('Peers: ${status.peerCount}'),
             if (status.lastError != null) Text('Last error: ${status.lastError}'),
+            if (status.peerIds.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text('Peer IDs: ${status.peerIds.take(6).join(', ')}', style: const TextStyle(fontSize: 12)),
+            ],
             const SizedBox(height: 6),
             const Text(
               'Tip: Multi-hop needs multiple phones nearby with Bluetooth on. Use a Target Device ID to require ACK, otherwise it floods locally.',

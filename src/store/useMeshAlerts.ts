@@ -12,6 +12,8 @@ type MeshAlertsState = {
   peerCount: number;
   relayConnected: boolean;
   relayClientId: string | null;
+  relayPeerCount: number;
+  relayPeerIds: string[];
   alerts: MeshAlert[];
   error: string | null;
   start: () => Promise<void>;
@@ -27,15 +29,25 @@ type MeshAlertsState = {
 const seenIds = new Set<string>();
 
 let client: MeshClient | null = null;
-let relayWs: WebSocket | null = null;
 let relaySse: EventSource | null = null;
 
 const buildSignalingUrl = () => {
   const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  return `${proto}//${window.location.host}/mesh`;
+  // In local dev, some setups open the UI on `:5173` while the Express server (and mesh endpoints)
+  // live on `:3000`. Prefer `:3000` unless we're already on it.
+  const host = window.location.hostname;
+  const port = window.location.port && window.location.port !== '3000' ? '3000' : window.location.port;
+  const withPort = port ? `${host}:${port}` : host;
+  return `${proto}//${withPort}/mesh`;
 };
 
-const buildRelayEventsUrl = () => `${window.location.origin}/mesh-relay/events`;
+const buildRelayEventsUrl = () => {
+  const proto = window.location.protocol;
+  const host = window.location.hostname;
+  const port = window.location.port && window.location.port !== '3000' ? '3000' : window.location.port;
+  const withPort = port ? `${host}:${port}` : host;
+  return `${proto}//${withPort}/mesh-relay/events`;
+};
 
 const normalizeAlert = (alert: MeshAlert): MeshAlert => ({
   ...alert,
@@ -50,6 +62,8 @@ export const useMeshAlerts = create<MeshAlertsState>((set, get) => ({
   peerCount: 0,
   relayConnected: false,
   relayClientId: null,
+  relayPeerCount: 0,
+  relayPeerIds: [],
   alerts: [],
   error: null,
   start: async () => {
@@ -68,7 +82,7 @@ export const useMeshAlerts = create<MeshAlertsState>((set, get) => ({
       relaySse.onopen = () => set({ relayConnected: true });
       relaySse.onerror = () => {
         // EventSource will retry; we still keep WebRTC mesh running.
-        set({ relayConnected: false, relayClientId: null });
+        set({ relayConnected: false, relayClientId: null, relayPeerCount: 0, relayPeerIds: [] });
       };
       relaySse.onmessage = async (event) => {
         const raw = String(event.data ?? '');
@@ -82,7 +96,23 @@ export const useMeshAlerts = create<MeshAlertsState>((set, get) => ({
         if (!parsed) return;
 
         if (parsed?.type === 'relay-welcome' && typeof parsed.id === 'string') {
-          set({ relayClientId: parsed.id });
+          const peers = Array.isArray(parsed.peers) ? parsed.peers : [];
+          const ids = peers.map((p: any) => String(p?.id ?? '')).filter(Boolean);
+          set({ relayClientId: parsed.id, relayPeerIds: ids, relayPeerCount: ids.length });
+          return;
+        }
+
+        if (parsed?.type === 'relay-peer-join' && typeof parsed.id === 'string') {
+          const state = get();
+          const next = Array.from(new Set([...state.relayPeerIds, parsed.id]));
+          set({ relayPeerIds: next, relayPeerCount: next.length });
+          return;
+        }
+
+        if (parsed?.type === 'relay-peer-leave' && typeof parsed.id === 'string') {
+          const state = get();
+          const next = state.relayPeerIds.filter((id) => id !== parsed.id);
+          set({ relayPeerIds: next, relayPeerCount: next.length });
           return;
         }
 
@@ -160,11 +190,18 @@ export const useMeshAlerts = create<MeshAlertsState>((set, get) => ({
   stop: () => {
     client?.disconnect();
     client = null;
-    relayWs?.close();
-    relayWs = null;
     relaySse?.close();
     relaySse = null;
-    set({ status: 'idle', started: false, peerCount: 0, peerId: null, relayConnected: false, relayClientId: null });
+    set({
+      status: 'idle',
+      started: false,
+      peerCount: 0,
+      peerId: null,
+      relayConnected: false,
+      relayClientId: null,
+      relayPeerCount: 0,
+      relayPeerIds: [],
+    });
   },
   broadcast: async ({ message, severity, location, ttl = 4 }) => {
     const peerId = get().peerId ?? 'unknown';

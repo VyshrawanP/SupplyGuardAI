@@ -12,7 +12,7 @@ const severityTone: Record<MeshAlertSeverity, string> = {
 };
 
 export function MeshAlertsPanel() {
-  const { status, started, start, peerCount, peerId, relayConnected, alerts, broadcast } = useMeshAlerts();
+  const { status, started, start, peerCount, peerId, relayConnected, relayPeerCount, alerts, broadcast } = useMeshAlerts();
   const [message, setMessage] = useState('');
   const [severity, setSeverity] = useState<MeshAlertSeverity>('high');
   const [lat, setLat] = useState('12.9716');
@@ -48,8 +48,8 @@ export function MeshAlertsPanel() {
           <h3 className="text-lg font-semibold text-slate-100">Offline mesh alerts</h3>
         </div>
         <div className="flex items-center gap-2 text-xs text-slate-300">
-          <span className={`ops-chip ${statusTone}`}>{statusLabel} | {peerCount} peers</span>
-          <span className="ops-chip">{relayConnected ? 'LAN relay: on' : 'LAN relay: off'}</span>
+          <span className={`ops-chip ${statusTone}`}>{statusLabel} | {peerCount} WebRTC peers</span>
+          <span className="ops-chip">{relayConnected ? `LAN relay: on (${relayPeerCount} peers)` : 'LAN relay: off'}</span>
           <span className="ops-chip">{navigator.onLine ? 'Internet: on' : 'Internet: off'}</span>
         </div>
       </div>
