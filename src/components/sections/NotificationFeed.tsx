@@ -19,8 +19,8 @@ export function NotificationFeed({
     <GlassCard className="p-4 sm:p-5">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Notification stream</p>
-          <h3 className="mt-2 text-lg font-semibold text-slate-100">Notifications</h3>
+          <p className="text-xs uppercase tracking-[0.14em] text-[var(--text-tertiary)]">Notification stream</p>
+          <h3 className="mt-2 text-lg font-semibold text-[var(--text-primary)]">Notifications</h3>
         </div>
         <span className="ops-chip">{notifications.length} events</span>
       </div>
@@ -33,13 +33,13 @@ export function NotificationFeed({
             }`}
           >
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm font-semibold text-slate-100">{item.title}</p>
+              <p className="text-sm font-semibold text-[var(--text-primary)]">{item.title}</p>
               <div className="flex items-center gap-2">
                 <span className="ops-chip">{item.source}</span>
                 <span className="ops-chip">{item.status}</span>
               </div>
             </div>
-            <p className="mt-1.5 text-sm leading-6 text-slate-300">{item.detail}</p>
+            <p className="mt-1.5 text-sm leading-6 text-[var(--text-secondary)]">{item.detail}</p>
           </div>
         ))}
       </div>
