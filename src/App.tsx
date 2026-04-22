@@ -4,17 +4,18 @@ import { IntroOverlay } from './components/sections/IntroOverlay';
 import { IndiaHistoryReplay } from './components/history/IndiaHistoryReplay';
 import { useMeshAlerts } from './store/useMeshAlerts';
 import { ProjectPortal } from './components/project/ProjectPortal';
-import { PromoPage } from './components/promo/PromoPage';
+import { LandingPage } from './components/landing/LandingPage';
+import './styles/landing.css';
 
 const INTRO_SEEN_KEY = 'sg_intro_seen';
 
-type AppView = 'promo' | 'dashboard' | 'history' | 'project';
+type AppView = 'landing' | 'dashboard' | 'history' | 'project';
 
 function viewFromPathname(pathname: string): AppView {
   if (pathname.startsWith('/project')) return 'project';
   if (pathname.startsWith('/history')) return 'history';
-  if (pathname.startsWith('/promo')) return 'promo';
-  return 'dashboard';
+  if (pathname.startsWith('/dashboard')) return 'dashboard';
+  return 'landing';
 }
 
 function projectStateFromLocation(location: Location) {
@@ -30,13 +31,13 @@ function projectStateFromLocation(location: Location) {
 function pathnameFromView(view: AppView) {
   if (view === 'project') return '/project';
   if (view === 'history') return '/history';
-  if (view === 'promo') return '/promo';
+  if (view === 'dashboard') return '/dashboard';
   return '/';
 }
 
 export default function App() {
   const [view, setView] = useState<AppView>(() => {
-    if (typeof window === 'undefined') return 'project';
+    if (typeof window === 'undefined') return 'landing';
     return viewFromPathname(window.location.pathname);
   });
   const [projectDocId, setProjectDocId] = useState<string | null>(() => {
@@ -121,8 +122,14 @@ export default function App() {
   }, [startMesh]);
 
   return (
-    <div className="min-h-screen text-white">
-      {view === 'history' ? (
+    <div className="min-h-screen">
+      {view === 'landing' ? (
+        <LandingPage
+          onOpenSimulation={() => navigate('dashboard')}
+          onOpenProject={() => navigate('project', { docId: 'overview' })}
+          onOpenDownloads={() => navigate('project', { docId: 'overview', downloadsOpen: true })}
+        />
+      ) : view === 'history' ? (
         <IndiaHistoryReplay onBack={() => navigate('dashboard')} />
       ) : view === 'project' ? (
         <ProjectPortal
@@ -133,15 +140,7 @@ export default function App() {
             setProjectDownloadsOpen(open);
             replaceProjectQuery({ docId: projectDocId, downloadsOpen: open });
           }}
-          onOpenPromo={() => navigate('promo')}
           onBackToConsole={() => navigate('dashboard')}
-        />
-      ) : view === 'promo' ? (
-        <PromoPage
-          onOpenConsole={() => navigate('dashboard')}
-          onOpenProject={() => navigate('project', { docId: 'overview' })}
-          onOpenHistory={() => navigate('history')}
-          onOpenDownloads={() => navigate('project', { docId: 'overview', downloadsOpen: true })}
         />
       ) : (
         <Dashboard
@@ -149,7 +148,6 @@ export default function App() {
           onOpenProject={() => navigate('project')}
           onOpenProjectDoc={(docId) => navigate('project', { docId })}
           onOpenDownloads={() => navigate('project', { docId: 'overview', downloadsOpen: true })}
-          onOpenPromo={() => navigate('promo')}
         />
       )}
       <IntroOverlay visible={view === 'dashboard' && showIntro} />

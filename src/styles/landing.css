@@ -1,0 +1,253 @@
+/* SupplyGuard AI — Landing page (dark) */
+
+.landing-page {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text-primary);
+}
+
+.landing-nav {
+  background: rgba(0, 0, 0, 0.65);
+  border-bottom: 1px solid var(--border);
+}
+
+.landing-mark {
+  background: var(--gradient-primary);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.6), 0 0 30px rgba(168, 85, 247, 0.18);
+}
+
+.landing-brand {
+  color: var(--text-primary);
+}
+
+.landing-link {
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 180ms ease;
+}
+
+.landing-link:hover {
+  color: var(--text-primary);
+}
+
+.landing-muted {
+  color: var(--text-tertiary);
+}
+
+.landing-subtitle {
+  color: var(--text-secondary);
+}
+
+.landing-body {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.landing-ok {
+  color: rgba(52, 211, 153, 0.95);
+}
+
+.landing-action-link {
+  color: rgba(34, 211, 238, 0.92);
+  transition: color 180ms ease;
+}
+
+.landing-action-link:hover {
+  color: rgba(168, 85, 247, 0.95);
+}
+
+.hero-section {
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid var(--border);
+}
+
+.hero-section::before {
+  content: '';
+  position: absolute;
+  inset: -200px -200px auto auto;
+  width: 680px;
+  height: 680px;
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.16) 0%, rgba(34, 211, 238, 0.08) 35%, transparent 70%);
+  pointer-events: none;
+  filter: blur(8px);
+}
+
+.landing-title {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
+}
+
+.landing-panel {
+  background: var(--gradient-card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(10px);
+}
+
+.landing-preview-map {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.landing-preview-map .border-t {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.landing-live-dot {
+  background: rgba(52, 211, 153, 0.95);
+  box-shadow: 0 0 18px rgba(52, 211, 153, 0.35);
+}
+
+.status-bubble {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.status-bubble--ok {
+  border-color: rgba(52, 211, 153, 0.65);
+  color: rgba(52, 211, 153, 0.95);
+  box-shadow: 0 0 18px rgba(52, 211, 153, 0.12);
+}
+
+.status-bubble--warn {
+  border-color: rgba(251, 191, 36, 0.7);
+  color: rgba(251, 191, 36, 0.95);
+  box-shadow: 0 0 18px rgba(251, 191, 36, 0.1);
+}
+
+.status-bubble--crit {
+  border-color: rgba(244, 63, 94, 0.7);
+  color: rgba(244, 63, 94, 0.95);
+  box-shadow: 0 0 18px rgba(244, 63, 94, 0.12);
+}
+
+.problem-section,
+.simulation-section,
+.validation-section,
+.differentiators-section,
+.deployment-section {
+  border-bottom: 1px solid var(--border);
+}
+
+.landing-quote {
+  border-left: 4px solid rgba(34, 211, 238, 0.4);
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.08) 0%, rgba(168, 85, 247, 0.06) 100%);
+  border-radius: 12px;
+}
+
+.landing-kicker {
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.btn-primary,
+.btn-secondary,
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease, border-color 180ms ease, color 180ms ease;
+  font-family: inherit;
+}
+
+.btn-primary {
+  color: #0b0b0d;
+  background: var(--gradient-primary);
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.65), 0 0 26px rgba(34, 211, 238, 0.14);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 18px 54px rgba(0, 0, 0, 0.7), 0 0 34px rgba(168, 85, 247, 0.22);
+}
+
+.btn-secondary {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(34, 211, 238, 0.26);
+  transform: translateY(-1px);
+}
+
+.btn-outline {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.14);
+  padding: 0.65rem 1rem;
+  font-size: 0.9rem;
+}
+
+.btn-outline:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(168, 85, 247, 0.3);
+}
+
+.landing-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  transition: transform 180ms ease, border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+}
+
+.landing-card:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(34, 211, 238, 0.24);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.landing-card--active {
+  border-color: rgba(168, 85, 247, 0.38);
+  box-shadow: var(--shadow-md), 0 0 26px rgba(168, 85, 247, 0.14);
+}
+
+.landing-card-sub {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.landing-icon {
+  color: rgba(34, 211, 238, 0.9);
+}
+
+.landing-table {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.landing-table-head-row {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.landing-table-row {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.landing-table-row:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.landing-footer {
+  background: rgba(255, 255, 255, 0.015);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.landing-footer-bottom {
+  border-color: rgba(255, 255, 255, 0.12);
+}

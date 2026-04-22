@@ -1,16 +1,5 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import {
-  Activity,
-  Ambulance,
-  BarChart3,
-  Building2,
-  CircleHelp,
-  Download,
-  MapPinned,
-  Wifi,
-  X,
-  Megaphone,
-} from 'lucide-react';
+import { useMemo } from 'react';
+import { Ambulance, Building2, Download, MapPinned, RotateCcw, ScrollText, Timer } from 'lucide-react';
 import { Map } from './Map';
 import { useStore } from '../store/useStore';
 import { BrandHero } from './sections/BrandHero';
@@ -19,72 +8,25 @@ import { SimulationControls } from './sections/SimulationControls';
 import { AIWhatIfBriefing } from './sections/AIWhatIfBriefing';
 import { ServiceOrchestration } from './sections/ServiceOrchestration';
 import { SystemAlerts } from './sections/SystemAlerts';
-import { StressScenarioReport } from './sections/StressScenarioReport';
-import { ScenarioComparisonBoard } from './sections/ScenarioComparisonBoard';
-import { ResponseMatrix } from './sections/ResponseMatrix';
-import { CaseStudies } from './sections/CaseStudies';
 import { HospitalOperationsView } from './sections/HospitalOperationsView';
 import { LocalityIntelligence } from './sections/LocalityIntelligence';
 import { LiveOperationsStats } from './sections/LiveOperationsStats';
 import { NotificationFeed } from './sections/NotificationFeed';
 import { StatusBadge } from './ui/StatusBadge';
-import { MeshAlertsPanel } from './sections/MeshAlertsPanel';
 import { EfficiencySnapshot } from './sections/EfficiencySnapshot';
 import { INDIA_SCENARIO_CUSTOM_ID } from '../store/indiaScenarioPresets';
-
-type DashboardSection = 'command' | 'operations' | 'impact';
-
-const DASHBOARD_SECTION_STORAGE_KEY = 'sg_dashboard_section';
-
-function MiniPill({
-  active,
-  icon,
-  label,
-  onClick,
-}: {
-  active: boolean;
-  icon: ReactNode;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      aria-pressed={active}
-      onClick={onClick}
-      className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm transition ${
-        active ? 'bg-white/10 text-white' : 'text-slate-300 hover:bg-white/8 hover:text-white'
-      }`}
-    >
-      {icon}
-      {label}
-    </button>
-  );
-}
 
 export const Dashboard = ({
   onOpenHistory,
   onOpenProject,
   onOpenProjectDoc,
   onOpenDownloads,
-  onOpenPromo,
 }: {
   onOpenHistory?: () => void;
   onOpenProject?: () => void;
   onOpenProjectDoc?: (docId: string) => void;
   onOpenDownloads?: () => void;
-  onOpenPromo?: () => void;
 }) => {
-  const [section, setSection] = useState<DashboardSection>(() => {
-    if (typeof window === 'undefined') return 'command';
-    const stored = window.localStorage.getItem(DASHBOARD_SECTION_STORAGE_KEY);
-    return stored === 'operations' || stored === 'impact' || stored === 'command' ? stored : 'command';
-  });
-
-  useEffect(() => {
-    window.localStorage.setItem(DASHBOARD_SECTION_STORAGE_KEY, section);
-  }, [section]);
-
   const {
     settings,
     localities,
@@ -99,16 +41,11 @@ export const Dashboard = ({
     comparisons,
     notifications,
     operations,
-    stressReport,
     selectedLocalityId,
     selectedHospitalId,
-    selectedStressTimelineId,
-    selectedStressDecisionId,
     updateSimulation,
     selectLocality,
     selectHospital,
-    selectStressTimeline,
-    selectStressDecision,
     resetSimulation,
   } = useStore();
 
@@ -132,33 +69,13 @@ export const Dashboard = ({
     [missions, selectedLocality.id],
   );
 
-  const serviceSummary = useMemo(
-    () =>
-      Object.entries(
-        missions.reduce<Record<string, number>>((acc, mission) => {
-          acc[mission.service] = (acc[mission.service] ?? 0) + 1;
-          return acc;
-        }, {}),
-      ),
-    [missions],
-  );
-
   const routeWarnings = routes.filter((route) => route.status !== 'open').length;
   const signalQuality = Math.max(
     35,
     Math.min(99, Math.round((summary.autonomyScore + aiBriefing.confidence + (100 - routeWarnings * 8)) / 3)),
   );
   const signalLabel = signalQuality > 80 ? 'Field ready' : signalQuality > 60 ? 'Stable' : 'Weak zones';
-  const [helpOpen, setHelpOpen] = useState(false);
-
-  const selectedStressTimeline =
-    stressReport.timeline.find((item) => item.id === selectedStressTimelineId) ?? stressReport.timeline[0];
-  const selectedStressDecision =
-    stressReport.decisions.find((item) => item.id === selectedStressDecisionId) ?? stressReport.decisions[0];
-
-  const activeNotificationIds = Array.from(
-    new Set([...selectedStressTimeline.notificationIds, ...selectedStressDecision.notificationIds]),
-  );
+  const recentNotifications = useMemo(() => notifications.slice(0, 10), [notifications]);
 
   const mapBadges = (
     <div className="grid gap-2 sm:grid-cols-3">
@@ -176,154 +93,48 @@ export const Dashboard = ({
 
   return (
     <div className="dashboard-shell min-h-screen text-white">
-      <header className="sticky top-0 z-50 border-b border-white/8 bg-slate-950/55 backdrop-blur-2xl">
+      <header className="sticky top-0 z-50 border-b border-white/10 bg-black/70 backdrop-blur-2xl">
         <div className="mx-auto flex max-w-[1320px] items-center justify-between gap-4 px-4 py-4 lg:px-6">
-          <div className="min-w-0">
-            <p className="truncate text-[11px] uppercase tracking-[0.35em] text-cyan-200/80">SupplyGuard AI</p>
-            <h1 className="mt-1 truncate text-lg font-semibold text-white">Bengaluru Command Console</h1>
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="landing-mark flex h-8 w-8 items-center justify-center rounded">
+              <span className="text-sm font-bold text-black">SG</span>
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-[11px] uppercase tracking-[0.35em] text-white/60">SupplyGuard AI</p>
+              <h1 className="mt-1 truncate text-lg font-semibold text-white">Command Console</h1>
+            </div>
           </div>
 
-          <nav className="hidden items-center gap-1 rounded-full border border-white/10 bg-white/5 p-1 md:flex">
-            <MiniPill
-              active={section === 'command'}
-              icon={<MapPinned className="h-4 w-4" />}
-              label="Command"
-              onClick={() => setSection('command')}
-            />
-            <MiniPill
-              active={section === 'operations'}
-              icon={<Activity className="h-4 w-4" />}
-              label="Operations"
-              onClick={() => setSection('operations')}
-            />
-            <MiniPill
-              active={section === 'impact'}
-              icon={<BarChart3 className="h-4 w-4" />}
-              label="Impact"
-              onClick={() => setSection('impact')}
-            />
-          </nav>
-
-          <div className="flex items-center gap-3">
-            <div className="relative hidden sm:block">
-              <button
-                type="button"
-                onClick={() => setHelpOpen((current) => !current)}
-                className="hidden rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:bg-white/10 sm:inline-flex"
-                aria-expanded={helpOpen}
-                aria-haspopup="menu"
-              >
-                <CircleHelp className="mr-2 h-3.5 w-3.5" />
-                Help
+          <div className="hidden items-center gap-2 sm:flex">
+            {onOpenProject ? (
+              <button type="button" onClick={onOpenProject} className="btn-outline">
+                <ScrollText className="h-4 w-4" />
+                Docs
               </button>
-              {helpOpen ? (
-                <div className="absolute right-0 top-[46px] z-50 w-[280px] rounded-[18px] border border-white/10 bg-slate-950/90 p-2 shadow-[0_24px_60px_rgba(0,0,0,0.45)] backdrop-blur">
-                  <div className="flex items-center justify-between gap-2 px-2 py-2">
-                    <p className="text-xs font-semibold text-slate-200">Quick actions</p>
-                    <button type="button" onClick={() => setHelpOpen(false)} className="ghost-button px-2 py-1">
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                  <div className="grid gap-1 p-1">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setHelpOpen(false);
-                        onOpenPromo?.();
-                      }}
-                      className="w-full rounded-[14px] px-3 py-2 text-left text-sm text-slate-200 transition hover:bg-white/5"
-                    >
-                      Promo website
-                      <div className="mt-0.5 text-xs text-slate-400">Landing page for sharing</div>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setHelpOpen(false);
-                        onOpenDownloads?.();
-                      }}
-                      className="w-full rounded-[14px] px-3 py-2 text-left text-sm text-slate-200 transition hover:bg-white/5"
-                    >
-                      Downloads
-                      <div className="mt-0.5 text-xs text-slate-400">Get all 3 apps as bundles</div>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setHelpOpen(false);
-                        onOpenProject?.();
-                      }}
-                      className="w-full rounded-[14px] px-3 py-2 text-left text-sm text-slate-200 transition hover:bg-white/5"
-                    >
-                      Open project website
-                      <div className="mt-0.5 text-xs text-slate-400">Docs, architecture, security, scripts</div>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setHelpOpen(false);
-                        onOpenProjectDoc?.('judge-quickstart');
-                      }}
-                      className="w-full rounded-[14px] px-3 py-2 text-left text-sm text-slate-200 transition hover:bg-white/5"
-                    >
-                      Judge quickstart
-                      <div className="mt-0.5 text-xs text-slate-400">Fast demo path</div>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setHelpOpen(false);
-                        onOpenHistory?.();
-                      }}
-                      className="w-full rounded-[14px] px-3 py-2 text-left text-sm text-slate-200 transition hover:bg-white/5"
-                    >
-                      History replay
-                      <div className="mt-0.5 text-xs text-slate-400">Scenario playback</div>
-                    </button>
-                  </div>
-                </div>
-              ) : null}
-            </div>
+            ) : null}
+            {onOpenProjectDoc ? (
+              <button type="button" onClick={() => onOpenProjectDoc('judge-quickstart')} className="btn-outline">
+                <Timer className="h-4 w-4" />
+                Quickstart
+              </button>
+            ) : null}
             {onOpenDownloads ? (
-              <button
-                type="button"
-                onClick={onOpenDownloads}
-                className="hidden rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:bg-white/10 sm:inline-flex"
-              >
-                <Download className="mr-2 h-3.5 w-3.5" />
+              <button type="button" onClick={onOpenDownloads} className="btn-outline">
+                <Download className="h-4 w-4" />
                 Downloads
               </button>
             ) : null}
-            {onOpenPromo ? (
-              <button
-                type="button"
-                onClick={onOpenPromo}
-                className="hidden rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:bg-white/10 sm:inline-flex"
-              >
-                <Megaphone className="mr-2 h-3.5 w-3.5" />
-                Promo
-              </button>
-            ) : null}
-            {onOpenProject ? (
-              <button
-                type="button"
-                onClick={onOpenProject}
-                className="hidden rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:bg-white/10 sm:inline-flex"
-              >
-                Project
-              </button>
-            ) : null}
             {onOpenHistory ? (
-              <button
-                type="button"
-                onClick={onOpenHistory}
-                className="hidden rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:bg-white/10 sm:inline-flex"
-              >
-                History replay
+              <button type="button" onClick={onOpenHistory} className="btn-outline">
+                <MapPinned className="h-4 w-4" />
+                Replay
               </button>
             ) : null}
-            <div className="hidden rounded-full border border-white/10 bg-slate-950/55 px-3 py-2 text-xs text-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] sm:flex">
-              <Wifi className="mr-2 h-3.5 w-3.5 text-cyan-300" />
+            <button type="button" onClick={resetSimulation} className="btn-outline">
+              <RotateCcw className="h-4 w-4" />
+              Reset
+            </button>
+            <div className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/70">
               Signal {signalQuality}% {signalLabel}
             </div>
           </div>
@@ -331,136 +142,109 @@ export const Dashboard = ({
       </header>
 
       <main className="mx-auto flex max-w-[1320px] flex-col gap-6 px-4 py-6 lg:px-6 lg:py-8">
-        {section === 'command' ? (
-          <section className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)] xl:items-start">
-            <aside className="flex flex-col gap-6">
-              <div className="panel-surface rounded-[28px] p-5">
-                <BrandHero />
-                <div className="mt-5">
-                  <KPIDashboard summary={summary} />
+        <section className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)] xl:items-start">
+          <aside className="flex flex-col gap-6">
+            <div className="panel-surface rounded-[28px] p-5">
+              <BrandHero />
+              <div className="mt-5">
+                <KPIDashboard summary={summary} />
+              </div>
+            </div>
+
+            <SimulationControls
+              settings={settings}
+              localityOptions={localities.map((locality) => ({ id: locality.id, name: locality.name }))}
+              onReset={resetSimulation}
+              onLocalityChange={(value) => {
+                updateSimulation({ scenarioPresetId: INDIA_SCENARIO_CUSTOM_ID, localityFocus: value });
+                selectLocality(value);
+              }}
+              onModeChange={(value) =>
+                updateSimulation({ scenarioPresetId: INDIA_SCENARIO_CUSTOM_ID, disasterMode: value })
+              }
+              onSimulationChange={updateSimulation}
+            />
+
+            <EfficiencySnapshot
+              summary={summary}
+              aiBriefing={aiBriefing}
+              missions={missions}
+              routes={routes}
+              hospitals={hospitals}
+              scenarioPresetId={settings.scenarioPresetId}
+            />
+
+            <AIWhatIfBriefing briefing={aiBriefing} comparisons={comparisons} />
+          </aside>
+
+          <section className="flex flex-col gap-6">
+            <div className="panel-surface rounded-[28px] p-4 sm:p-5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="section-kicker">Command map</p>
+                  <h2 className="mt-2 text-2xl font-semibold text-white">Live operations</h2>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-white/70">
+                    Tune intensity to see routing risk, mission queues, and hospital strain update together.
+                  </p>
+                </div>
+                <div className="hidden flex-col items-end gap-2 sm:flex">
+                  <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/80">
+                    Signal {signalQuality}% {signalLabel}
+                  </div>
+                  {mapBadges}
                 </div>
               </div>
+              <div className="mt-4">
+                <Map />
+              </div>
+            </div>
 
-              <SimulationControls
-                settings={settings}
-                localityOptions={localities.map((locality) => ({ id: locality.id, name: locality.name }))}
-                onReset={resetSimulation}
-                onLocalityChange={(value) => {
-                  updateSimulation({ scenarioPresetId: INDIA_SCENARIO_CUSTOM_ID, localityFocus: value });
-                  selectLocality(value);
-                }}
-                onModeChange={(value) =>
-                  updateSimulation({ scenarioPresetId: INDIA_SCENARIO_CUSTOM_ID, disasterMode: value })
-                }
-                onSimulationChange={updateSimulation}
-              />
-
-              <EfficiencySnapshot
-                summary={summary}
-                aiBriefing={aiBriefing}
-                missions={missions}
-                routes={routes}
-                hospitals={hospitals}
-                scenarioPresetId={settings.scenarioPresetId}
-              />
-
-              <AIWhatIfBriefing briefing={aiBriefing} comparisons={comparisons} />
-            </aside>
-
-            <section className="flex flex-col gap-6">
-              <div className="panel-surface rounded-[28px] p-4 sm:p-5">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+              <div className="panel-surface rounded-[28px] p-5">
+                <div className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="section-kicker">Command map</p>
-                    <h2 className="mt-2 text-2xl font-semibold text-white">Operations view</h2>
-                    <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
-                      Set disaster mode and intensity to see routing, missions, and hospital pressure update together.
-                    </p>
+                    <p className="section-kicker">Locality</p>
+                    <h2 className="mt-2 text-xl font-semibold text-white">Intelligence</h2>
                   </div>
-                  <div className="hidden flex-col items-end gap-2 sm:flex">
-                    <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-200">
-                      Signal {signalQuality}% {signalLabel}
-                    </div>
-                    {mapBadges}
+                  <div className="text-right text-xs text-white/60">
+                    Active focus: <span className="text-white/85">{selectedLocality?.name ?? '—'}</span>
                   </div>
                 </div>
                 <div className="mt-4">
-                  <Map />
+                  <LocalityIntelligence
+                    locality={selectedLocality}
+                    hospitals={supportedHospitals}
+                    fleet={fleet.slice(0, 5)}
+                    routes={topRoutes}
+                    timeline={timeline}
+                  />
                 </div>
               </div>
 
-              <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-                <div className="panel-surface rounded-[28px] p-5">
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <p className="section-kicker">Locality</p>
-                      <h2 className="mt-2 text-xl font-semibold text-white">Intelligence</h2>
-                    </div>
-                    <div className="text-right text-xs text-slate-400">
-                      Active focus: <span className="text-slate-200">{selectedLocality?.name ?? '—'}</span>
-                    </div>
-                  </div>
-                  <div className="mt-4">
-                    <LocalityIntelligence
-                      locality={selectedLocality}
-                      hospitals={supportedHospitals}
-                      fleet={fleet.slice(0, 5)}
-                      routes={topRoutes}
-                      timeline={timeline}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid gap-6">
-                  <SystemAlerts alerts={alerts} />
-                  <LiveOperationsStats stats={operations} />
-                </div>
-              </div>
-
-              <NotificationFeed notifications={notifications} activeIds={activeNotificationIds} />
-            </section>
-          </section>
-        ) : section === 'operations' ? (
-          <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-            <div className="flex flex-col gap-6">
-              <ServiceOrchestration missions={visibleMissions} />
-              <div className="grid gap-6 lg:grid-cols-2">
+              <div className="grid gap-6">
+                <SystemAlerts alerts={alerts} />
                 <LiveOperationsStats stats={operations} />
-                <NotificationFeed notifications={notifications} activeIds={activeNotificationIds} />
               </div>
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-2">
+              <ServiceOrchestration missions={visibleMissions} />
               <HospitalOperationsView
                 hospitals={hospitals}
                 selectedHospitalId={selectedHospitalId}
                 onSelectHospital={selectHospital}
               />
             </div>
-            <div className="flex flex-col gap-6">
-              <SystemAlerts alerts={alerts} />
-              <MeshAlertsPanel />
-            </div>
+
+            <NotificationFeed notifications={recentNotifications} />
           </section>
-        ) : (
-          <section className="grid gap-6">
-            <CaseStudies />
-            <div className="grid gap-6 lg:grid-cols-2">
-              <ScenarioComparisonBoard comparisons={comparisons} />
-              <ResponseMatrix summary={serviceSummary} />
-            </div>
-            <StressScenarioReport
-              report={stressReport}
-              selectedTimelineId={selectedStressTimelineId}
-              selectedDecisionId={selectedStressDecisionId}
-              onSelectTimeline={selectStressTimeline}
-              onSelectDecision={selectStressDecision}
-            />
-          </section>
-        )}
+        </section>
       </main>
 
-      <footer className="border-t border-white/8 bg-slate-950/60">
-        <div className="mx-auto flex max-w-[1320px] flex-col gap-3 px-4 py-6 text-sm text-slate-400 sm:flex-row sm:items-center sm:justify-between lg:px-6">
-          <p>SupplyGuard AI prototype</p>
-          <p>Offline-friendly simulation | Command console prototype</p>
+      <footer className="border-t border-white/10 bg-black/60">
+        <div className="mx-auto flex max-w-[1320px] flex-col gap-3 px-4 py-6 text-sm text-white/60 sm:flex-row sm:items-center sm:justify-between lg:px-6">
+          <p>SupplyGuard AI</p>
+          <p>Offline-friendly simulation | Command console</p>
         </div>
       </footer>
     </div>
