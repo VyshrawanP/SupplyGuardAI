@@ -25,6 +25,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -44,6 +45,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.activity.compose.rememberLauncherForActivityResult
 import ai.supplyguard.data.CommandPayload
 import ai.supplyguard.data.CommandPriority
+import ai.supplyguard.work.WorkScheduler
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -102,6 +104,8 @@ private fun VictimScreen(
   commands: List<CommandPayload>,
   onSendSos: (String?, String?, String?) -> Unit,
 ) {
+  val context = LocalContext.current
+  var syncLabel by remember { mutableStateOf<String?>(null) }
   var name by remember { mutableStateOf("") }
   var location by remember { mutableStateOf("") }
   var need by remember { mutableStateOf("") }
@@ -121,6 +125,18 @@ private fun VictimScreen(
           text = "Bluetooth permissions are required to run offline mesh messaging.",
           color = MaterialTheme.colorScheme.error,
         )
+      }
+
+      Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+        TextButton(
+          onClick = {
+            WorkScheduler.enqueueBackendSyncNow(context, BuildConfig.BACKEND_BASE_URL)
+            syncLabel = "Sync requested"
+          },
+        ) { Text("Sync now") }
+      }
+      if (syncLabel != null) {
+        Text(syncLabel!!, style = MaterialTheme.typography.labelSmall)
       }
 
       Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
@@ -188,7 +204,14 @@ private fun CommandCard(payload: CommandPayload) {
 }
 
 private fun requiredPermissions(): Array<String> {
-  return if (Build.VERSION.SDK_INT >= 31) {
+  return if (Build.VERSION.SDK_INT >= 33) {
+    arrayOf(
+      Manifest.permission.POST_NOTIFICATIONS,
+      Manifest.permission.BLUETOOTH_SCAN,
+      Manifest.permission.BLUETOOTH_CONNECT,
+      Manifest.permission.BLUETOOTH_ADVERTISE,
+    )
+  } else if (Build.VERSION.SDK_INT >= 31) {
     arrayOf(
       Manifest.permission.BLUETOOTH_SCAN,
       Manifest.permission.BLUETOOTH_CONNECT,

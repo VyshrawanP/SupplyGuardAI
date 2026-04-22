@@ -3,11 +3,14 @@ package ai.supplyguard.work
 import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import ai.supplyguard.data.CommandPayload
 import ai.supplyguard.db.MeshMessageEntity
 import ai.supplyguard.db.AppDatabase
 import ai.supplyguard.db.MessageSyncState
+import ai.supplyguard.notify.CommandNotifications
 import ai.supplyguard.net.ApiMessageDto
 import ai.supplyguard.net.BackendClient
+import kotlinx.serialization.json.Json
 
 /**
  * Syncs locally stored mesh messages to the backend once internet is available.
@@ -19,6 +22,7 @@ class BackendSyncWorker(
   appContext: Context,
   params: WorkerParameters,
 ) : CoroutineWorker(appContext, params) {
+  private val json = Json { ignoreUnknownKeys = true }
 
   override suspend fun doWork(): Result {
     val baseUrl = inputData.getString("baseUrl") ?: return Result.failure()
@@ -53,7 +57,7 @@ class BackendSyncWorker(
         var maxTs = lastPullEpochMs
         for (msg in pulled) {
           maxTs = maxOf(maxTs, msg.timestampEpochMs)
-          dao.insertIgnore(
+          val inserted = dao.insertIgnore(
             MeshMessageEntity(
               id = msg.id,
               type = msg.type,
@@ -68,6 +72,11 @@ class BackendSyncWorker(
               syncState = MessageSyncState.SYNCED,
             ),
           )
+          if (inserted != -1L && inserted != 0L) {
+            runCatching { json.decodeFromString(CommandPayload.serializer(), msg.payload) }
+              .getOrNull()
+              ?.let { CommandNotifications.notifyCommand(applicationContext, msg.id, it) }
+          }
         }
         prefs.edit().putLong("last_pull_epoch_ms", maxTs).apply()
       }

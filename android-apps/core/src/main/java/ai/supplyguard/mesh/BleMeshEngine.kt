@@ -21,7 +21,9 @@ import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.os.ParcelUuid
+import ai.supplyguard.data.CommandPayload
 import ai.supplyguard.data.MeshEnvelope
+import ai.supplyguard.data.MeshMessageType
 import ai.supplyguard.db.AppDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -29,6 +31,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import ai.supplyguard.notify.CommandNotifications
 import kotlinx.serialization.json.Json
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.ConcurrentHashMap
@@ -273,6 +276,11 @@ class BleMeshEngine(
           val raw = String(value, StandardCharsets.UTF_8)
           val env = json.decodeFromString(MeshEnvelope.serializer(), raw)
           val isNew = repository.router.onReceive(env, rssi = null)
+          if (isNew && env.type == MeshMessageType.COMMAND) {
+            runCatching { json.decodeFromString(CommandPayload.serializer(), env.payload) }
+              .getOrNull()
+              ?.let { CommandNotifications.notifyCommand(appContext, env.id, it) }
+          }
           if (isNew && repository.router.shouldForward(env)) {
             // Stored; will be forwarded on the next scan/connect loop.
           }
@@ -286,4 +294,3 @@ class BleMeshEngine(
     }
   }
 }
-

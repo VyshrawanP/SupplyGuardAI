@@ -46,6 +46,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ai.supplyguard.data.CommandPayload
 import ai.supplyguard.data.CommandPriority
+import ai.supplyguard.work.WorkScheduler
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -106,6 +107,8 @@ private fun RescueScreen(
   sos: List<SosItem>,
   onSendResponse: (String, String) -> Unit,
 ) {
+  val context = LocalContext.current
+  var syncLabel by remember { mutableStateOf<String?>(null) }
   var activeRespondTarget by remember { mutableStateOf<SosItem?>(null) }
   var responseMessage by remember { mutableStateOf("") }
 
@@ -146,6 +149,18 @@ private fun RescueScreen(
         .padding(16.dp),
       verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+      Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+        TextButton(
+          onClick = {
+            WorkScheduler.enqueueBackendSyncNow(context, BuildConfig.BACKEND_BASE_URL)
+            syncLabel = "Sync requested"
+          },
+        ) { Text("Sync now") }
+      }
+      if (syncLabel != null) {
+        Text(syncLabel!!, style = MaterialTheme.typography.labelSmall)
+      }
+
       if (!hasPermissions) {
         Text(
           text = "Bluetooth permissions are required to run offline mesh messaging.",
@@ -218,7 +233,14 @@ private fun SosCard(item: SosItem, hasPermissions: Boolean, onRespond: () -> Uni
 }
 
 private fun requiredPermissions(): Array<String> {
-  return if (Build.VERSION.SDK_INT >= 31) {
+  return if (Build.VERSION.SDK_INT >= 33) {
+    arrayOf(
+      Manifest.permission.POST_NOTIFICATIONS,
+      Manifest.permission.BLUETOOTH_SCAN,
+      Manifest.permission.BLUETOOTH_CONNECT,
+      Manifest.permission.BLUETOOTH_ADVERTISE,
+    )
+  } else if (Build.VERSION.SDK_INT >= 31) {
     arrayOf(
       Manifest.permission.BLUETOOTH_SCAN,
       Manifest.permission.BLUETOOTH_CONNECT,

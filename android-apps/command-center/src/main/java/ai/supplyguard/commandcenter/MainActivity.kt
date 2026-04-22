@@ -57,6 +57,7 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import ai.supplyguard.work.WorkScheduler
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -130,6 +131,8 @@ private fun CommandCenterScreen(
   onBroadcast: (String?, String, CommandPriority) -> Unit,
   onOpenWebUi: () -> Unit,
 ) {
+  val context = LocalContext.current
+  var syncLabel by remember { mutableStateOf<String?>(null) }
   var title by remember { mutableStateOf("") }
   var message by remember { mutableStateOf("") }
   var priority by remember { mutableStateOf(CommandPriority.INFO) }
@@ -144,7 +147,16 @@ private fun CommandCenterScreen(
       verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
       Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+        TextButton(
+          onClick = {
+            WorkScheduler.enqueueBackendSyncNow(context, BuildConfig.BACKEND_BASE_URL)
+            syncLabel = "Sync requested"
+          },
+        ) { Text("Sync now") }
         TextButton(onClick = onOpenWebUi) { Text("Open Web UI") }
+      }
+      if (syncLabel != null) {
+        Text(syncLabel!!, style = MaterialTheme.typography.labelSmall)
       }
 
       if (!hasPermissions) {
@@ -368,7 +380,14 @@ private fun WebGatewayScreen(
 }
 
 private fun requiredPermissions(): Array<String> {
-  return if (Build.VERSION.SDK_INT >= 31) {
+  return if (Build.VERSION.SDK_INT >= 33) {
+    arrayOf(
+      Manifest.permission.POST_NOTIFICATIONS,
+      Manifest.permission.BLUETOOTH_SCAN,
+      Manifest.permission.BLUETOOTH_CONNECT,
+      Manifest.permission.BLUETOOTH_ADVERTISE,
+    )
+  } else if (Build.VERSION.SDK_INT >= 31) {
     arrayOf(
       Manifest.permission.BLUETOOTH_SCAN,
       Manifest.permission.BLUETOOTH_CONNECT,
