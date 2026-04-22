@@ -10,21 +10,21 @@ import ai.supplyguard.work.WorkScheduler
 class RescueApp : Application() {
   lateinit var db: AppDatabase
     private set
-  lateinit var deviceId: String
+
+  lateinit var repository: MeshRepository
     private set
-  lateinit var repo: MeshRepository
-    private set
-  lateinit var ble: BleMeshEngine
+
+  lateinit var meshEngine: BleMeshEngine
     private set
 
   override fun onCreate() {
     super.onCreate()
     db = AppDatabase.get(this)
-    deviceId = DeviceIdProvider(this).getOrCreate()
-    repo = MeshRepository(db = db, deviceId = deviceId)
-    ble = BleMeshEngine(context = this, db = db, repository = repo).also { it.start() }
+    val deviceId = DeviceIdProvider(this).getOrCreate()
+    repository = MeshRepository(db = db, deviceId = deviceId)
+    meshEngine = BleMeshEngine(context = this, db = db, repository = repository)
 
-    WorkScheduler.scheduleBackendSync(this, baseUrl = "http://10.0.2.2:3000")
+    WorkScheduler.enqueueBackendSyncNow(this, BuildConfig.BACKEND_BASE_URL)
+    WorkScheduler.scheduleBackendSync(this, BuildConfig.BACKEND_BASE_URL)
   }
 }
-

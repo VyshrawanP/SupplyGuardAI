@@ -13,10 +13,13 @@ android {
     targetSdk = 34
     versionCode = 1
     versionName = "1.0"
+
+    buildConfigField("String", "BACKEND_BASE_URL", "\"http://127.0.0.1:3000\"")
   }
 
   buildFeatures {
     compose = true
+    buildConfig = true
   }
   composeOptions {
     kotlinCompilerExtensionVersion = "1.5.14"
@@ -47,7 +50,10 @@ dependencies {
   implementation("androidx.compose.material3:material3")
   implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
   implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.4")
+  implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.4")
+
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+  implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
 
   debugImplementation("androidx.compose.ui:ui-tooling")
 }
-

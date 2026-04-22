@@ -2,6 +2,8 @@ package ai.supplyguard.mesh
 
 import ai.supplyguard.data.MeshEnvelope
 import ai.supplyguard.data.MeshMessageType
+import ai.supplyguard.data.CommandPayload
+import ai.supplyguard.data.CommandPriority
 import ai.supplyguard.data.ResponsePayload
 import ai.supplyguard.data.SosPayload
 import ai.supplyguard.db.AppDatabase
@@ -25,6 +27,9 @@ class MeshRepository(
   fun watchResponses(): Flow<List<MeshEnvelope>> =
     dao.watchByType(MeshMessageType.RESPONSE.name).map { entities -> entities.map { it.toEnvelope() } }
 
+  fun watchCommands(): Flow<List<MeshEnvelope>> =
+    dao.watchByType(MeshMessageType.COMMAND.name).map { entities -> entities.map { it.toEnvelope() } }
+
   fun watchAll(): Flow<List<MeshEnvelope>> =
     dao.watchAll().map { entities -> entities.map { it.toEnvelope() } }
 
@@ -46,6 +51,20 @@ class MeshRepository(
     val payload = json.encodeToString(ResponsePayload(targetMessageId = targetMessageId, message = message))
     val env = MeshEnvelope(
       type = MeshMessageType.RESPONSE,
+      timestampEpochMs = System.currentTimeMillis(),
+      ttl = 8,
+      hops = 0,
+      originDeviceId = deviceId,
+      payload = payload,
+    )
+    router.onReceive(env, rssi = null)
+    return env
+  }
+
+  suspend fun createCommand(title: String?, message: String, priority: CommandPriority): MeshEnvelope {
+    val payload = json.encodeToString(CommandPayload(title = title, message = message, priority = priority))
+    val env = MeshEnvelope(
+      type = MeshMessageType.COMMAND,
       timestampEpochMs = System.currentTimeMillis(),
       ttl = 8,
       hops = 0,

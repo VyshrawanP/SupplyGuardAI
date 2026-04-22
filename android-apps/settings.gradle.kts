@@ -19,4 +19,4 @@ rootProject.name = "supplyguard-mesh"
 include(":core")
 include(":victim")
 include(":rescue")
-
+include(":command-center")

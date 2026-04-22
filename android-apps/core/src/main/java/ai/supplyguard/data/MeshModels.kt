@@ -15,6 +15,11 @@ enum class MeshMessageType {
   RESPONSE,
   @SerialName("ACK")
   ACK,
+  /**
+   * Broadcast messages sent from the "command center" device to all field devices.
+   */
+  @SerialName("COMMAND")
+  COMMAND,
 }
 
 /**
@@ -52,3 +57,19 @@ data class AckPayload(
   val targetMessageId: String,
 )
 
+@Serializable
+enum class CommandPriority {
+  @SerialName("INFO")
+  INFO,
+  @SerialName("WARNING")
+  WARNING,
+  @SerialName("CRITICAL")
+  CRITICAL,
+}
+
+@Serializable
+data class CommandPayload(
+  val title: String? = null,
+  val message: String,
+  val priority: CommandPriority = CommandPriority.INFO,
+)

@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SupplyGuard Command Center (Offline)</title>
+    <style>
+      :root { color-scheme: dark; }
+      body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: #0b1220; color: #e6eefc; }
+      .wrap { padding: 16px; max-width: 720px; margin: 0 auto; }
+      .card { border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); border-radius: 16px; padding: 14px; }
+      h1 { font-size: 18px; margin: 0 0 10px; }
+      p { margin: 8px 0; color: rgba(230, 238, 252, 0.8); font-size: 13px; line-height: 1.5; }
+      label { display: block; font-size: 12px; margin: 10px 0 6px; color: rgba(230, 238, 252, 0.85); }
+      input, textarea, select { width: 100%; box-sizing: border-box; border-radius: 12px; border: 1px solid rgba(255,255,255,0.16); background: rgba(0,0,0,0.18); color: #e6eefc; padding: 10px 12px; }
+      textarea { min-height: 90px; resize: vertical; }
+      .row { display: grid; grid-template-columns: 1fr 160px; gap: 10px; align-items: end; }
+      button { width: 100%; border-radius: 12px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.08); color: #e6eefc; padding: 10px 12px; font-weight: 600; }
+      button:active { transform: translateY(1px); }
+      .status { margin-top: 10px; font-size: 12px; color: rgba(230, 238, 252, 0.75); }
+      .ok { color: #7ceaa4; }
+      .bad { color: #ff7b7b; }
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="card">
+        <h1>Offline Web Gateway</h1>
+        <p>
+          This page runs inside the Android Command Center app and sends commands to nearby devices via BLE mesh.
+          It works with <b>no internet</b> and <b>no Wi‑Fi</b>.
+        </p>
+        <p class="mono">Bridge: window.SupplyGuardBridge.broadcastCommand(title, message, priority)</p>
+
+        <label>Title (optional)</label>
+        <input id="title" placeholder="Evacuation Order" />
+
+        <label>Message</label>
+        <textarea id="message" placeholder="Move to higher ground. Proceed to Zone B checkpoints."></textarea>
+
+        <div class="row">
+          <div>
+            <label>Priority</label>
+            <select id="priority">
+              <option value="INFO">Info</option>
+              <option value="WARNING">Warning</option>
+              <option value="CRITICAL">Critical</option>
+            </select>
+          </div>
+          <div>
+            <label>&nbsp;</label>
+            <button id="send">Broadcast</button>
+          </div>
+        </div>
+
+        <div id="status" class="status"></div>
+      </div>
+    </div>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+      const status = (text, ok) => {
+        const el = $("status");
+        el.textContent = text;
+        el.className = "status " + (ok ? "ok" : "bad");
+      };
+
+      $("send").addEventListener("click", () => {
+        const title = $("title").value || null;
+        const message = $("message").value || "";
+        const priority = $("priority").value || "INFO";
+
+        const bridge = window.SupplyGuardBridge;
+        if (!bridge || typeof bridge.broadcastCommand !== "function") {
+          status("Native bridge not available. Open this inside the Android Command Center app.", false);
+          return;
+        }
+        if (!message.trim()) {
+          status("Message is required.", false);
+          return;
+        }
+
+        try {
+          bridge.broadcastCommand(title, message, priority);
+          $("message").value = "";
+          status("Broadcast queued via BLE mesh.", true);
+        } catch (e) {
+          status("Failed to send: " + String(e && e.message ? e.message : e), false);
+        }
+      });
+    </script>
+  </body>
+</html>
+

@@ -1,12 +1,12 @@
 package ai.supplyguard.rescue
 
-import android.os.Bundle
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -21,14 +21,17 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,88 +39,106 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import ai.supplyguard.data.MeshEnvelope
-import ai.supplyguard.data.SosPayload
-import ai.supplyguard.rescue.ui.RescueViewModel
 import androidx.core.content.ContextCompat
-import kotlinx.serialization.json.Json
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import ai.supplyguard.data.CommandPayload
+import ai.supplyguard.data.CommandPriority
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-    setContent {
-      MaterialTheme {
-        BlePermissionGate {
-          RescueScreen()
-        }
-      }
-    }
+    setContent { RescueAppRoot() }
   }
 }
 
 @Composable
-private fun BlePermissionGate(content: @Composable () -> Unit) {
-  val permissions = remember {
-    if (Build.VERSION.SDK_INT >= 31) {
-      arrayOf(
-        Manifest.permission.BLUETOOTH_SCAN,
-        Manifest.permission.BLUETOOTH_CONNECT,
-        Manifest.permission.BLUETOOTH_ADVERTISE,
-      )
-    } else {
-      arrayOf(
-        Manifest.permission.ACCESS_FINE_LOCATION,
-      )
+private fun RescueAppRoot() {
+  MaterialTheme {
+    val context = LocalContext.current
+    val app = context.applicationContext as RescueApp
+    val permissions = remember { requiredPermissions() }
+
+    var hasPermissions by remember { mutableStateOf(hasAllPermissions(context, permissions)) }
+    val permissionLauncher = rememberLauncherForActivityResult(
+      contract = ActivityResultContracts.RequestMultiplePermissions(),
+      onResult = { result -> hasPermissions = result.values.all { it } },
+    )
+
+    LaunchedEffect(Unit) {
+      if (!hasPermissions) permissionLauncher.launch(permissions)
     }
-  }
 
-  var granted by remember { mutableStateOf(false) }
-  val context = LocalContext.current
+    LaunchedEffect(hasPermissions) {
+      if (hasPermissions) app.meshEngine.start() else app.meshEngine.stop()
+    }
 
-  val launcher = rememberLauncherForActivityResult(
-    contract = ActivityResultContracts.RequestMultiplePermissions(),
-  ) { results ->
-    granted = results.values.all { it }
-  }
+    DisposableEffect(Unit) {
+      onDispose { app.meshEngine.stop() }
+    }
 
-  val allGrantedNow = permissions.all { perm ->
-    ContextCompat.checkSelfPermission(context, perm) == PackageManager.PERMISSION_GRANTED
-  }
-
-  granted = granted || allGrantedNow
-
-  if (granted) {
-    content()
-  } else {
-    Scaffold(
-      topBar = { TopAppBar(title = { Text("Permissions") }) },
-    ) { padding ->
-      Column(
-        modifier = Modifier
-          .fillMaxSize()
-          .padding(padding)
-          .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-      ) {
-        Text("Bluetooth permissions are required to receive SOS over the offline mesh.")
-        Button(onClick = { launcher.launch(permissions) }) {
-          Text("Grant permissions")
+    val vm: RescueViewModel = viewModel(
+      factory = object : ViewModelProvider.Factory {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+          @Suppress("UNCHECKED_CAST")
+          return RescueViewModel(app.repository) as T
         }
-      }
-    }
+      },
+    )
+    val state by vm.state.collectAsStateWithLifecycle()
+
+    RescueScreen(
+      hasPermissions = hasPermissions,
+      commands = state.commands,
+      sos = state.sos,
+      onSendResponse = vm::sendResponse,
+    )
   }
 }
 
+@Composable
 @OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun RescueScreen(vm: RescueViewModel = viewModel()) {
-  val sosList by vm.sos.collectAsState()
-  var respondingTo by remember { mutableStateOf<MeshEnvelope?>(null) }
+private fun RescueScreen(
+  hasPermissions: Boolean,
+  commands: List<CommandPayload>,
+  sos: List<SosItem>,
+  onSendResponse: (String, String) -> Unit,
+) {
+  var activeRespondTarget by remember { mutableStateOf<SosItem?>(null) }
+  var responseMessage by remember { mutableStateOf("") }
 
-  Scaffold(
-    topBar = { TopAppBar(title = { Text("Rescue Team") }) },
-  ) { padding ->
+  if (activeRespondTarget != null) {
+    AlertDialog(
+      onDismissRequest = { activeRespondTarget = null },
+      title = { Text("Send Response") },
+      text = {
+        OutlinedTextField(
+          value = responseMessage,
+          onValueChange = { responseMessage = it },
+          label = { Text("Message") },
+          modifier = Modifier.fillMaxWidth(),
+        )
+      },
+      confirmButton = {
+        TextButton(
+          enabled = hasPermissions && responseMessage.isNotBlank(),
+          onClick = {
+            val target = activeRespondTarget ?: return@TextButton
+            onSendResponse(target.envelope.id, responseMessage.trim())
+            responseMessage = ""
+            activeRespondTarget = null
+          },
+        ) { Text("Send") }
+      },
+      dismissButton = {
+        TextButton(onClick = { activeRespondTarget = null }) { Text("Cancel") }
+      },
+    )
+  }
+
+  Scaffold(topBar = { TopAppBar(title = { Text("SupplyGuard Rescue") }) }) { padding ->
     Column(
       modifier = Modifier
         .fillMaxSize()
@@ -125,91 +146,95 @@ private fun RescueScreen(vm: RescueViewModel = viewModel()) {
         .padding(16.dp),
       verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+      if (!hasPermissions) {
+        Text(
+          text = "Bluetooth permissions are required to run offline mesh messaging.",
+          color = MaterialTheme.colorScheme.error,
+        )
+      }
+
+      Text("Command Center Updates", style = MaterialTheme.typography.titleMedium)
+      LazyColumn(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+      ) {
+        if (commands.isEmpty()) {
+          item { Text("No updates received yet.") }
+        } else {
+          items(commands) { cmd -> CommandCard(cmd) }
+        }
+        item { Spacer(Modifier.height(8.dp)) }
+      }
+
       Text("Incoming SOS", style = MaterialTheme.typography.titleMedium)
-      Card {
-        LazyColumn(
-          modifier = Modifier
-            .fillMaxWidth()
-            .height(520.dp)
-            .padding(8.dp),
-          verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-          items(sosList, key = { it.id }) { env ->
-            SosRow(env = env, onRespond = { respondingTo = env })
+      LazyColumn(
+        modifier = Modifier.fillMaxWidth().weight(1f, fill = false),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+      ) {
+        if (sos.isEmpty()) {
+          item { Text("No SOS received yet.") }
+        } else {
+          items(sos) { item ->
+            SosCard(item = item, hasPermissions = hasPermissions, onRespond = { activeRespondTarget = item })
           }
         }
       }
     }
+  }
+}
 
-    if (respondingTo != null) {
-      RespondDialog(
-        env = respondingTo!!,
-        onDismiss = { respondingTo = null },
-        onSend = { msg ->
-          vm.sendResponse(targetMessageId = respondingTo!!.id, message = msg)
-          respondingTo = null
-        },
-      )
+@Composable
+private fun CommandCard(payload: CommandPayload) {
+  val tone = when (payload.priority) {
+    CommandPriority.INFO -> MaterialTheme.colorScheme.surfaceVariant
+    CommandPriority.WARNING -> MaterialTheme.colorScheme.tertiaryContainer
+    CommandPriority.CRITICAL -> MaterialTheme.colorScheme.errorContainer
+  }
+  Card(colors = CardDefaults.cardColors(containerColor = tone)) {
+    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+      Text(payload.title ?: "Update", style = MaterialTheme.typography.titleSmall)
+      Text(payload.message, style = MaterialTheme.typography.bodyMedium)
+      Text(payload.priority.name, style = MaterialTheme.typography.labelSmall)
     }
   }
 }
 
 @Composable
-private fun SosRow(env: MeshEnvelope, onRespond: () -> Unit) {
-  val json = remember { Json { ignoreUnknownKeys = true } }
-  val payload = remember(env.payload) {
-    runCatching { json.decodeFromString(SosPayload.serializer(), env.payload) }.getOrNull()
-  }
+private fun SosCard(item: SosItem, hasPermissions: Boolean, onRespond: () -> Unit) {
+  val title = item.payload?.name?.takeIf { it.isNotBlank() } ?: "SOS"
+  val location = item.payload?.locationText?.takeIf { it.isNotBlank() } ?: "Unknown location"
+  val need = item.payload?.need?.takeIf { it.isNotBlank() } ?: "No details"
 
-  Card {
+  Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
     Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-      Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text("SOS ${env.id.take(8)}", style = MaterialTheme.typography.titleSmall)
-        Text("hops ${env.hops} ttl ${env.ttl}", style = MaterialTheme.typography.bodySmall)
+      Text(title, style = MaterialTheme.typography.titleSmall)
+      Text(location, style = MaterialTheme.typography.bodySmall)
+      Text(need, style = MaterialTheme.typography.bodyMedium)
+      Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+        Button(onClick = onRespond, enabled = hasPermissions) { Text("Respond") }
       }
-      Text(
-        payload?.need ?: "Need help",
-        style = MaterialTheme.typography.bodyMedium,
-      )
-      Text(
-        listOfNotNull(payload?.name?.takeIf { it.isNotBlank() }, payload?.locationText?.takeIf { it.isNotBlank() })
-          .joinToString(" • ")
-          .ifEmpty { "Unknown identity/location" },
-        style = MaterialTheme.typography.bodySmall,
-      )
-      Spacer(modifier = Modifier.height(4.dp))
-      Button(onClick = onRespond) { Text("Send Response") }
     }
   }
 }
 
-@Composable
-private fun RespondDialog(env: MeshEnvelope, onDismiss: () -> Unit, onSend: (String) -> Unit) {
-  var message by remember { mutableStateOf("Rescue team en route. Stay where you are if safe.") }
+private fun requiredPermissions(): Array<String> {
+  return if (Build.VERSION.SDK_INT >= 31) {
+    arrayOf(
+      Manifest.permission.BLUETOOTH_SCAN,
+      Manifest.permission.BLUETOOTH_CONNECT,
+      Manifest.permission.BLUETOOTH_ADVERTISE,
+    )
+  } else {
+    arrayOf(
+      Manifest.permission.ACCESS_FINE_LOCATION,
+      Manifest.permission.BLUETOOTH,
+      Manifest.permission.BLUETOOTH_ADMIN,
+    )
+  }
+}
 
-  AlertDialog(
-    onDismissRequest = onDismiss,
-    title = { Text("Respond to SOS") },
-    text = {
-      Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text("Target: ${env.id}")
-        OutlinedTextField(
-          value = message,
-          onValueChange = { message = it },
-          label = { Text("Response message") },
-          modifier = Modifier.fillMaxWidth(),
-          minLines = 2,
-          maxLines = 5,
-        )
-      }
-    },
-    confirmButton = {
-      Button(onClick = { onSend(message.trim()) }, enabled = message.trim().isNotEmpty()) {
-        Text("Send")
-      }
-    },
-    dismissButton = {
-      Button(onClick = onDismiss) { Text("Cancel") }
-    },
-  )
+private fun hasAllPermissions(context: android.content.Context, permissions: Array<String>): Boolean {
+  return permissions.all {
+    ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+  }
 }
