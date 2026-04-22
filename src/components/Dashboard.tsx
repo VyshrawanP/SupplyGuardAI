@@ -4,8 +4,12 @@ import {
   Ambulance,
   BarChart3,
   Building2,
+  CircleHelp,
+  Download,
   MapPinned,
   Wifi,
+  X,
+  Megaphone,
 } from 'lucide-react';
 import { Map } from './Map';
 import { useStore } from '../store/useStore';
@@ -58,7 +62,19 @@ function MiniPill({
   );
 }
 
-export const Dashboard = ({ onOpenHistory }: { onOpenHistory?: () => void }) => {
+export const Dashboard = ({
+  onOpenHistory,
+  onOpenProject,
+  onOpenProjectDoc,
+  onOpenDownloads,
+  onOpenPromo,
+}: {
+  onOpenHistory?: () => void;
+  onOpenProject?: () => void;
+  onOpenProjectDoc?: (docId: string) => void;
+  onOpenDownloads?: () => void;
+  onOpenPromo?: () => void;
+}) => {
   const [section, setSection] = useState<DashboardSection>(() => {
     if (typeof window === 'undefined') return 'command';
     const stored = window.localStorage.getItem(DASHBOARD_SECTION_STORAGE_KEY);
@@ -133,6 +149,7 @@ export const Dashboard = ({ onOpenHistory }: { onOpenHistory?: () => void }) => 
     Math.min(99, Math.round((summary.autonomyScore + aiBriefing.confidence + (100 - routeWarnings * 8)) / 3)),
   );
   const signalLabel = signalQuality > 80 ? 'Field ready' : signalQuality > 60 ? 'Stable' : 'Weak zones';
+  const [helpOpen, setHelpOpen] = useState(false);
 
   const selectedStressTimeline =
     stressReport.timeline.find((item) => item.id === selectedStressTimelineId) ?? stressReport.timeline[0];
@@ -188,6 +205,114 @@ export const Dashboard = ({ onOpenHistory }: { onOpenHistory?: () => void }) => 
           </nav>
 
           <div className="flex items-center gap-3">
+            <div className="relative hidden sm:block">
+              <button
+                type="button"
+                onClick={() => setHelpOpen((current) => !current)}
+                className="hidden rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:bg-white/10 sm:inline-flex"
+                aria-expanded={helpOpen}
+                aria-haspopup="menu"
+              >
+                <CircleHelp className="mr-2 h-3.5 w-3.5" />
+                Help
+              </button>
+              {helpOpen ? (
+                <div className="absolute right-0 top-[46px] z-50 w-[280px] rounded-[18px] border border-white/10 bg-slate-950/90 p-2 shadow-[0_24px_60px_rgba(0,0,0,0.45)] backdrop-blur">
+                  <div className="flex items-center justify-between gap-2 px-2 py-2">
+                    <p className="text-xs font-semibold text-slate-200">Quick actions</p>
+                    <button type="button" onClick={() => setHelpOpen(false)} className="ghost-button px-2 py-1">
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <div className="grid gap-1 p-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setHelpOpen(false);
+                        onOpenPromo?.();
+                      }}
+                      className="w-full rounded-[14px] px-3 py-2 text-left text-sm text-slate-200 transition hover:bg-white/5"
+                    >
+                      Promo website
+                      <div className="mt-0.5 text-xs text-slate-400">Landing page for sharing</div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setHelpOpen(false);
+                        onOpenDownloads?.();
+                      }}
+                      className="w-full rounded-[14px] px-3 py-2 text-left text-sm text-slate-200 transition hover:bg-white/5"
+                    >
+                      Downloads
+                      <div className="mt-0.5 text-xs text-slate-400">Get all 3 apps as bundles</div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setHelpOpen(false);
+                        onOpenProject?.();
+                      }}
+                      className="w-full rounded-[14px] px-3 py-2 text-left text-sm text-slate-200 transition hover:bg-white/5"
+                    >
+                      Open project website
+                      <div className="mt-0.5 text-xs text-slate-400">Docs, architecture, security, scripts</div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setHelpOpen(false);
+                        onOpenProjectDoc?.('judge-quickstart');
+                      }}
+                      className="w-full rounded-[14px] px-3 py-2 text-left text-sm text-slate-200 transition hover:bg-white/5"
+                    >
+                      Judge quickstart
+                      <div className="mt-0.5 text-xs text-slate-400">Fast demo path</div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setHelpOpen(false);
+                        onOpenHistory?.();
+                      }}
+                      className="w-full rounded-[14px] px-3 py-2 text-left text-sm text-slate-200 transition hover:bg-white/5"
+                    >
+                      History replay
+                      <div className="mt-0.5 text-xs text-slate-400">Scenario playback</div>
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+            {onOpenDownloads ? (
+              <button
+                type="button"
+                onClick={onOpenDownloads}
+                className="hidden rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:bg-white/10 sm:inline-flex"
+              >
+                <Download className="mr-2 h-3.5 w-3.5" />
+                Downloads
+              </button>
+            ) : null}
+            {onOpenPromo ? (
+              <button
+                type="button"
+                onClick={onOpenPromo}
+                className="hidden rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:bg-white/10 sm:inline-flex"
+              >
+                <Megaphone className="mr-2 h-3.5 w-3.5" />
+                Promo
+              </button>
+            ) : null}
+            {onOpenProject ? (
+              <button
+                type="button"
+                onClick={onOpenProject}
+                className="hidden rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:bg-white/10 sm:inline-flex"
+              >
+                Project
+              </button>
+            ) : null}
             {onOpenHistory ? (
               <button
                 type="button"

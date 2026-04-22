@@ -19,6 +19,15 @@
   --standby: #6b7280;
 
   --radius: 4px;
+
+  /* Website/Docs portal convenience aliases (dark-only) */
+  --bg-base: var(--bg);
+  --bg-panel: rgba(15, 23, 42, 0.72);
+  --border-subtle: rgba(148, 163, 184, 0.12);
+  --text-muted: var(--text-secondary);
+  --accent-emerald: #10b981;
+  --accent-rose: #f43f5e;
+  --accent-amber: #fbbf24;
 }
 
 * {
@@ -419,4 +428,98 @@ body {
   .intro-card {
     padding: 1.4rem;
   }
+}
+
+.markdown-content {
+  color: var(--text-primary);
+  line-height: 1.7;
+}
+
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4 {
+  margin: 1.25rem 0 0.6rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.markdown-content h1 {
+  font-size: 1.6rem;
+}
+
+.markdown-content h2 {
+  font-size: 1.25rem;
+  color: rgba(52, 211, 153, 0.92);
+}
+
+.markdown-content h3 {
+  font-size: 1.08rem;
+}
+
+.markdown-content p {
+  margin: 0.75rem 0;
+  color: var(--text-secondary);
+}
+
+.markdown-content a {
+  color: rgba(56, 189, 248, 0.95);
+  text-decoration: none;
+}
+
+.markdown-content a:hover {
+  text-decoration: underline;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  margin: 0.75rem 0 0.75rem 1.25rem;
+  color: var(--text-secondary);
+}
+
+.markdown-content li {
+  margin: 0.25rem 0;
+}
+
+.markdown-content code {
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 0.1rem 0.35rem;
+  border-radius: 6px;
+  font-size: 0.92em;
+  color: rgba(226, 232, 240, 0.95);
+}
+
+.markdown-content pre {
+  margin: 0.9rem 0;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(15, 18, 21, 0.9);
+  padding: 0.9rem;
+  overflow: auto;
+}
+
+.markdown-content pre code {
+  border: none;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  display: block;
+  color: rgba(226, 232, 240, 0.92);
+}
+
+.markdown-content blockquote {
+  margin: 0.9rem 0;
+  padding: 0.75rem 0.9rem;
+  border-left: 3px solid rgba(56, 189, 248, 0.7);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  color: var(--text-secondary);
+}
+
+.markdown-content hr {
+  border: none;
+  height: 1px;
+  background: var(--border);
+  margin: 1.25rem 0;
 }

@@ -101,6 +101,7 @@ export function IndiaHistoryReplay({
   const [scenarioId, setScenarioId] = useState(indiaHistoryReplayScenarios[0]?.id ?? 'kerala-floods-2018');
   const [phaseIndex, setPhaseIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const [speed, setSpeed] = useState<1 | 2 | 4 | 8>(1);
 
   const scenario: IndiaHistoryReplayScenario = useMemo(() => {
     return indiaHistoryReplayScenarios.find((item) => item.id === scenarioId) ?? indiaHistoryReplayScenarios[0];
@@ -129,13 +130,14 @@ export function IndiaHistoryReplay({
     if (!playing) return;
     const timer = window.setInterval(() => {
       setPhaseIndex((current) => (current + 1) % phases.length);
-    }, 2200);
+    }, Math.max(260, Math.round(2200 / speed)));
     return () => window.clearInterval(timer);
-  }, [playing, phases.length]);
+  }, [playing, phases.length, speed]);
 
   useEffect(() => {
     setPhaseIndex(0);
     setPlaying(false);
+    setSpeed(1);
   }, [scenarioId]);
 
   const severityRadiusMeters = Math.max(15_000, Math.round(scenario.map.radiusKm * 1000 * (0.65 + phase.severity / 160)));
@@ -158,9 +160,14 @@ export function IndiaHistoryReplay({
               <h1 className="mt-1 text-lg font-semibold text-white">Past disaster scenarios with map playback</h1>
             </div>
           </div>
-          <div className="hidden items-center gap-2 text-sm text-slate-300 md:flex">
-            <MapPinned className="h-4 w-4 text-cyan-300" />
-            India map view
+          <div className="hidden items-center gap-3 md:flex">
+            <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-200">
+              Phase {phaseIndex + 1}/{phases.length} • {speed}x
+            </div>
+            <div className="flex items-center gap-2 text-sm text-slate-300">
+              <MapPinned className="h-4 w-4 text-cyan-300" />
+              India map view
+            </div>
           </div>
         </div>
       </header>
@@ -195,6 +202,20 @@ export function IndiaHistoryReplay({
                 <h3 className="mt-1 text-lg font-semibold">Timeline</h3>
               </div>
               <div className="flex items-center gap-2">
+                <div className="hidden items-center rounded-full border border-white/10 bg-white/5 p-1 sm:flex">
+                  {[1, 2, 4, 8].map((value) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setSpeed(value as 1 | 2 | 4 | 8)}
+                      className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                        speed === value ? 'bg-emerald-500/15 text-emerald-200' : 'text-slate-300 hover:bg-white/5 hover:text-white'
+                      }`}
+                    >
+                      {value}x
+                    </button>
+                  ))}
+                </div>
                 <button
                   type="button"
                   onClick={() => setPhaseIndex(0)}
@@ -337,4 +358,3 @@ export function IndiaHistoryReplay({
     </div>
   );
 }
-
