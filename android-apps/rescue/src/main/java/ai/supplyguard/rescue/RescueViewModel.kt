@@ -67,14 +67,16 @@ class RescueViewModel(
    * and other devices know the rescuer's position without tying it to a specific SOS.
    */
   fun sendLocationBroadcast(
+    description: String,
     latitude: Double,
     longitude: Double,
     accuracyMeters: Float?,
   ) {
     viewModelScope.launch {
+      val descPart = if (description.isNotBlank()) "$description - " else ""
       repository.createResponse(
         targetMessageId = "LOCATION_BROADCAST",
-        message = "Rescuer location update: Lat ${String.format("%.6f", latitude)}, Lon ${String.format("%.6f", longitude)}" +
+        message = "${descPart}Rescuer location update: Lat ${String.format("%.6f", latitude)}, Lon ${String.format("%.6f", longitude)}" +
           (accuracyMeters?.let { " (±${String.format("%.0f", it)}m accuracy)" } ?: ""),
         latitude = latitude,
         longitude = longitude,
