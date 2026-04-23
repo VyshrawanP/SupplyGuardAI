@@ -54,6 +54,74 @@ class CommandCenterViewModel(
     }
   }
 
+  fun sendToVictim(title: String?, message: String, priority: CommandPriority) {
+    viewModelScope.launch {
+      repository.sendToVictim(
+        title = title?.takeIf { it.isNotBlank() },
+        message = message.trim(),
+        priority = priority,
+      )
+    }
+  }
+
+  fun sendToRescue(
+    title: String?,
+    message: String,
+    priority: CommandPriority,
+    latitude: Double? = null,
+    longitude: Double? = null,
+    accuracyMeters: Float? = null,
+  ) {
+    viewModelScope.launch {
+      repository.sendToRescue(
+        title = title?.takeIf { it.isNotBlank() },
+        message = message.trim(),
+        priority = priority,
+        latitude = latitude,
+        longitude = longitude,
+        accuracyMeters = accuracyMeters,
+      )
+    }
+  }
+
+  fun forwardSosLocationToRescue(envelope: MeshEnvelope, payload: SosPayload?) {
+    val lat = payload?.latitude ?: return
+    val lon = payload.longitude ?: return
+    val accuracy = payload.accuracyMeters
+    val who = payload.name?.takeIf { it.isNotBlank() } ?: envelope.originDeviceId.takeLast(6)
+    val locationText = payload.locationText?.takeIf { it.isNotBlank() }
+    val need = payload.need?.takeIf { it.isNotBlank() }
+    val message = buildString {
+      append("Forwarded victim location for ")
+      append(who)
+      append(".")
+      if (locationText != null) {
+        append(" Location: ")
+        append(locationText)
+        append(".")
+      }
+      if (need != null) {
+        append(" Need: ")
+        append(need)
+        append(".")
+      }
+      append(" Source SOS id: ")
+      append(envelope.id)
+      append(".")
+    }
+
+    viewModelScope.launch {
+      repository.sendToRescue(
+        title = "Victim location",
+        message = message,
+        priority = CommandPriority.WARNING,
+        latitude = lat,
+        longitude = lon,
+        accuracyMeters = accuracy,
+      )
+    }
+  }
+
   private fun MeshEnvelope.toCommandPayloadOrNull(): CommandPayload? {
     return try {
       json.decodeFromString(CommandPayload.serializer(), payload)

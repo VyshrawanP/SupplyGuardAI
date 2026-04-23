@@ -1,8 +1,38 @@
+# Node
 node_modules/
-build/
 dist/
 coverage/
+
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+
+# Android
+*.keystore
+!debug.keystore
+*.ap_
+*.aab
+local.properties
+/android-apps/**/build/
+/android-apps/**/.gradle/
+/android-apps/**/.gradle-home/
+
+# IDEs and OS
+.idea/
+.vscode/
+*.iml
+.metadata
 .DS_Store
+Thumbs.db
+
+# Logs
 *.log
+
+# Env
 .env*
 !.env.example

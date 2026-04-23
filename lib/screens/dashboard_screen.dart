@@ -97,10 +97,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     const center = LatLng(12.9716, 77.5946); // Bengaluru
 
     return FlutterMap(
-      options: MapOptions(
+      options: const MapOptions(
         initialCenter: center,
         initialZoom: 11,
-        interactionOptions: const InteractionOptions(flags: InteractiveFlag.all),
+        interactionOptions: InteractionOptions(flags: InteractiveFlag.all),
       ),
       children: [
         TileLayer(

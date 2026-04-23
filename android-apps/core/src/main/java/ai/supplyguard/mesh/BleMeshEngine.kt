@@ -53,9 +53,9 @@ class BleMeshEngine(
   private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
   private val json = Json { ignoreUnknownKeys = true }
 
-  private val btManager: BluetoothManager =
-    appContext.getSystemService(BluetoothManager::class.java)
-  private val adapter = btManager.adapter
+  private val btManager: BluetoothManager? =
+    try { appContext.getSystemService(BluetoothManager::class.java) } catch (_: Throwable) { null }
+  private val adapter = try { btManager?.adapter } catch (_: Throwable) { null }
 
   private var advertiser: BluetoothLeAdvertiser? = null
   private var scanner: BluetoothLeScanner? = null
@@ -70,11 +70,13 @@ class BleMeshEngine(
     if (running) return
     running = true
 
-    advertiser = adapter.bluetoothLeAdvertiser
-    scanner = adapter.bluetoothLeScanner
+    try {
+      advertiser = adapter?.bluetoothLeAdvertiser
+      scanner = adapter?.bluetoothLeScanner
+    } catch (_: Throwable) {}
 
-    startGattServer()
-    startAdvertising()
+    try { startGattServer() } catch (_: Throwable) {}
+    try { startAdvertising() } catch (_: Throwable) {}
 
     loopJob = scope.launch { dutyCycleLoop() }
   }
@@ -106,33 +108,41 @@ class BleMeshEngine(
   }
 
   private fun startGattServer() {
-    val server = btManager.openGattServer(appContext, gattServerCallback)
-    val service = BluetoothGattService(BleUuids.SERVICE_UUID, BluetoothGattService.SERVICE_TYPE_PRIMARY)
-    val messageChar = BluetoothGattCharacteristic(
-      BleUuids.MESSAGE_CHAR_UUID,
-      BluetoothGattCharacteristic.PROPERTY_WRITE or BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE,
-      BluetoothGattCharacteristic.PERMISSION_WRITE,
-    )
-    service.addCharacteristic(messageChar)
-    server.addService(service)
-    gattServer = server
+    val server = try {
+      btManager?.openGattServer(appContext, gattServerCallback)
+    } catch (_: Throwable) { return }
+    if (server == null) return
+    try {
+      val service = BluetoothGattService(BleUuids.SERVICE_UUID, BluetoothGattService.SERVICE_TYPE_PRIMARY)
+      val messageChar = BluetoothGattCharacteristic(
+        BleUuids.MESSAGE_CHAR_UUID,
+        BluetoothGattCharacteristic.PROPERTY_WRITE or BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE,
+        BluetoothGattCharacteristic.PERMISSION_WRITE,
+      )
+      service.addCharacteristic(messageChar)
+      server.addService(service)
+      gattServer = server
+    } catch (_: Throwable) {
+      try { server.close() } catch (_: Throwable) {}
+    }
   }
 
   private fun startAdvertising() {
     val adv = advertiser ?: return
+    try {
+      val settings = AdvertiseSettings.Builder()
+        .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED)
+        .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_MEDIUM)
+        .setConnectable(true)
+        .build()
 
-    val settings = AdvertiseSettings.Builder()
-      .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED)
-      .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_MEDIUM)
-      .setConnectable(true)
-      .build()
+      val data = AdvertiseData.Builder()
+        .setIncludeDeviceName(false)
+        .addServiceUuid(ParcelUuid(BleUuids.SERVICE_UUID))
+        .build()
 
-    val data = AdvertiseData.Builder()
-      .setIncludeDeviceName(false)
-      .addServiceUuid(ParcelUuid(BleUuids.SERVICE_UUID))
-      .build()
-
-    adv.startAdvertising(settings, data, advertiseCallback)
+      adv.startAdvertising(settings, data, advertiseCallback)
+    } catch (_: Throwable) {}
   }
 
   @SuppressLint("MissingPermission")
@@ -186,42 +196,34 @@ class BleMeshEngine(
 
   @SuppressLint("MissingPermission")
   private fun connectAndExchange(device: BluetoothDevice) {
-    val gatt = device.connectGatt(appContext, false, object : BluetoothGattCallback() {
-      override fun onConnectionStateChange(g: BluetoothGatt, status: Int, newState: Int) {
-        if (newState == BluetoothProfile.STATE_CONNECTED) {
-          activeConnections[device.address] = g
-          g.requestMtu(185)
-          g.discoverServices()
-        } else {
-          activeConnections.remove(device.address)
-          try {
-            g.close()
-          } catch (_: Throwable) {}
+    try {
+      val gatt = device.connectGatt(appContext, false, object : BluetoothGattCallback() {
+        override fun onConnectionStateChange(g: BluetoothGatt, status: Int, newState: Int) {
+          if (newState == BluetoothProfile.STATE_CONNECTED) {
+            activeConnections[device.address] = g
+            try { g.requestMtu(185) } catch (_: Throwable) {}
+            try { g.discoverServices() } catch (_: Throwable) {}
+          } else {
+            activeConnections.remove(device.address)
+            try { g.close() } catch (_: Throwable) {}
+          }
         }
-      }
 
-      override fun onMtuChanged(g: BluetoothGatt, mtu: Int, status: Int) {
-        // no-op
-      }
+        override fun onMtuChanged(g: BluetoothGatt, mtu: Int, status: Int) {
+          // no-op
+        }
 
-      override fun onServicesDiscovered(g: BluetoothGatt, status: Int) {
-        if (status != BluetoothGatt.GATT_SUCCESS) {
-          g.disconnect()
-          return
+        override fun onServicesDiscovered(g: BluetoothGatt, status: Int) {
+          if (status != BluetoothGatt.GATT_SUCCESS) { g.disconnect(); return }
+          val service = g.getService(BleUuids.SERVICE_UUID) ?: run { g.disconnect(); return }
+          val ch = service.getCharacteristic(BleUuids.MESSAGE_CHAR_UUID) ?: run { g.disconnect(); return }
+          scope.launch { sendForwardCandidates(g, ch) }
         }
-        val service = g.getService(BleUuids.SERVICE_UUID) ?: run {
-          g.disconnect()
-          return
-        }
-        val ch = service.getCharacteristic(BleUuids.MESSAGE_CHAR_UUID) ?: run {
-          g.disconnect()
-          return
-        }
-        scope.launch { sendForwardCandidates(g, ch) }
-      }
-    })
-    // In case connectGatt returns immediately null on some devices, ignore.
-    if (gatt == null) return
+      })
+      if (gatt == null) return
+    } catch (_: Throwable) {
+      // connectGatt can throw SecurityException on MIUI if BT state is inconsistent
+    }
   }
 
   private suspend fun sendForwardCandidates(gatt: BluetoothGatt, ch: BluetoothGattCharacteristic) {

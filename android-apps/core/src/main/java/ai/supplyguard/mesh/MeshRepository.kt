@@ -4,6 +4,7 @@ import ai.supplyguard.data.MeshEnvelope
 import ai.supplyguard.data.MeshMessageType
 import ai.supplyguard.data.CommandPayload
 import ai.supplyguard.data.CommandPriority
+import ai.supplyguard.data.CommandTarget
 import ai.supplyguard.data.ResponsePayload
 import ai.supplyguard.data.SosPayload
 import ai.supplyguard.db.AppDatabase
@@ -33,8 +34,15 @@ class MeshRepository(
   fun watchAll(): Flow<List<MeshEnvelope>> =
     dao.watchAll().map { entities -> entities.map { it.toEnvelope() } }
 
-  suspend fun createSos(name: String?, locationText: String?, need: String?): MeshEnvelope {
-    val payload = json.encodeToString(SosPayload(name, locationText, need))
+  suspend fun createSos(
+    name: String?,
+    locationText: String?,
+    need: String?,
+    latitude: Double? = null,
+    longitude: Double? = null,
+    accuracyMeters: Float? = null,
+  ): MeshEnvelope {
+    val payload = json.encodeToString(SosPayload(name, locationText, need, latitude, longitude, accuracyMeters))
     val env = MeshEnvelope(
       type = MeshMessageType.SOS,
       timestampEpochMs = System.currentTimeMillis(),
@@ -47,8 +55,22 @@ class MeshRepository(
     return env
   }
 
-  suspend fun createResponse(targetMessageId: String, message: String): MeshEnvelope {
-    val payload = json.encodeToString(ResponsePayload(targetMessageId = targetMessageId, message = message))
+  suspend fun createResponse(
+    targetMessageId: String,
+    message: String,
+    latitude: Double? = null,
+    longitude: Double? = null,
+    accuracyMeters: Float? = null,
+  ): MeshEnvelope {
+    val payload = json.encodeToString(
+      ResponsePayload(
+        targetMessageId = targetMessageId,
+        message = message,
+        latitude = latitude,
+        longitude = longitude,
+        accuracyMeters = accuracyMeters,
+      )
+    )
     val env = MeshEnvelope(
       type = MeshMessageType.RESPONSE,
       timestampEpochMs = System.currentTimeMillis(),
@@ -61,8 +83,87 @@ class MeshRepository(
     return env
   }
 
-  suspend fun createCommand(title: String?, message: String, priority: CommandPriority): MeshEnvelope {
-    val payload = json.encodeToString(CommandPayload(title = title, message = message, priority = priority))
+  suspend fun createCommand(
+    title: String?,
+    message: String,
+    priority: CommandPriority,
+    latitude: Double? = null,
+    longitude: Double? = null,
+    accuracyMeters: Float? = null,
+  ): MeshEnvelope {
+    val payload = json.encodeToString(
+      CommandPayload(
+        title = title,
+        message = message,
+        priority = priority,
+        targetApp = CommandTarget.ALL,
+        latitude = latitude,
+        longitude = longitude,
+        accuracyMeters = accuracyMeters,
+      )
+    )
+    val env = MeshEnvelope(
+      type = MeshMessageType.COMMAND,
+      timestampEpochMs = System.currentTimeMillis(),
+      ttl = 8,
+      hops = 0,
+      originDeviceId = deviceId,
+      payload = payload,
+    )
+    router.onReceive(env, rssi = null)
+    return env
+  }
+
+  suspend fun sendToVictim(
+    title: String?,
+    message: String,
+    priority: CommandPriority,
+    latitude: Double? = null,
+    longitude: Double? = null,
+    accuracyMeters: Float? = null,
+  ): MeshEnvelope {
+    val payload = json.encodeToString(
+      CommandPayload(
+        title = title,
+        message = message,
+        priority = priority,
+        targetApp = CommandTarget.VICTIM,
+        latitude = latitude,
+        longitude = longitude,
+        accuracyMeters = accuracyMeters,
+      )
+    )
+    val env = MeshEnvelope(
+      type = MeshMessageType.COMMAND,
+      timestampEpochMs = System.currentTimeMillis(),
+      ttl = 8,
+      hops = 0,
+      originDeviceId = deviceId,
+      payload = payload,
+    )
+    router.onReceive(env, rssi = null)
+    return env
+  }
+
+  suspend fun sendToRescue(
+    title: String?,
+    message: String,
+    priority: CommandPriority,
+    latitude: Double? = null,
+    longitude: Double? = null,
+    accuracyMeters: Float? = null,
+  ): MeshEnvelope {
+    val payload = json.encodeToString(
+      CommandPayload(
+        title = title,
+        message = message,
+        priority = priority,
+        targetApp = CommandTarget.RESCUE,
+        latitude = latitude,
+        longitude = longitude,
+        accuracyMeters = accuracyMeters,
+      )
+    )
     val env = MeshEnvelope(
       type = MeshMessageType.COMMAND,
       timestampEpochMs = System.currentTimeMillis(),

@@ -44,12 +44,18 @@ data class SosPayload(
   val name: String? = null,
   val locationText: String? = null,
   val need: String? = null,
+  val latitude: Double? = null,
+  val longitude: Double? = null,
+  val accuracyMeters: Float? = null,
 )
 
 @Serializable
 data class ResponsePayload(
   val targetMessageId: String,
   val message: String,
+  val latitude: Double? = null,
+  val longitude: Double? = null,
+  val accuracyMeters: Float? = null,
 )
 
 @Serializable
@@ -68,8 +74,22 @@ enum class CommandPriority {
 }
 
 @Serializable
+enum class CommandTarget {
+  @SerialName("ALL")
+  ALL,
+  @SerialName("VICTIM")
+  VICTIM,
+  @SerialName("RESCUE")
+  RESCUE,
+}
+
+@Serializable
 data class CommandPayload(
   val title: String? = null,
   val message: String,
   val priority: CommandPriority = CommandPriority.INFO,
+  val targetApp: CommandTarget = CommandTarget.ALL,
+  val latitude: Double? = null,
+  val longitude: Double? = null,
+  val accuracyMeters: Float? = null,
 )
