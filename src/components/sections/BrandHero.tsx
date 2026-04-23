@@ -9,9 +9,9 @@ export function BrandHero() {
         Run the same simulation stack, response orchestration, and hospital-resource coordination on top of a real city map, but with a layout that lets the map lead and the decision context support it.
       </p>
       <div className="mt-8 flex flex-wrap gap-3 text-sm">
-        <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-4 py-2 text-cyan-50">Live Bengaluru map</span>
-        <span className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-4 py-2 text-emerald-50">Scenario simulation</span>
-        <span className="rounded-full border border-amber-300/20 bg-amber-300/10 px-4 py-2 text-amber-50">Offline-ready operations</span>
+        <span className="ops-chip">Live Bengaluru map</span>
+        <span className="ops-chip">Scenario simulation</span>
+        <span className="ops-chip">Offline-ready operations</span>
       </div>
     </div>
   );

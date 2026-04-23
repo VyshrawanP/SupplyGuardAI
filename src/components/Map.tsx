@@ -12,6 +12,7 @@ import {
 import { renderToStaticMarkup } from 'react-dom/server';
 import { useStore } from '../store/useStore';
 import { useHospitalCapacities } from '../hooks/useHospitalCapacities';
+import { useFleetAnimation } from '../hooks/useFleetAnimation';
 
 type LatLng = { lat: number; lng: number };
 
@@ -416,7 +417,7 @@ const progressBetweenAbstractPoints = (
   return Math.max(0, Math.min(1, t));
 };
 
-export const Map: React.FC = () => {
+export const Map: React.FC<{ simulationRunning?: boolean; simulationSpeed?: number }> = ({ simulationRunning = false, simulationSpeed = 1 }) => {
   const {
     settings,
     localities,
@@ -519,6 +520,19 @@ export const Map: React.FC = () => {
     failedRouteIds: failedMissionRouteIds,
   } = useOsrmRoutes(missionDescriptors);
   const routingFallbackActive = failedCorridorRouteIds.length > 0 || failedMissionRouteIds.length > 0;
+
+  // Fleet animation: assign each fleet unit to its mission route
+  const fleetRouteAssignments = useMemo(
+    () => fleet.map((unit) => {
+      const relatedMission = missions.find((m) => m.service === unit.service && m.localityId === unit.localityId);
+      return {
+        unitId: unit.id,
+        routeKey: relatedMission ? `mission:${relatedMission.id}` : '',
+      };
+    }).filter(a => a.routeKey !== ''),
+    [fleet, missions],
+  );
+  const animatedFleetPositions = useFleetAnimation(simulationRunning, simulationSpeed, missionRoutes, fleetRouteAssignments);
 
   return (
     <div className="map-shell relative overflow-hidden rounded-[28px] border border-white/10 lg:rounded-[36px]">
@@ -739,8 +753,11 @@ export const Map: React.FC = () => {
                 ? progressBetweenAbstractPoints(hub.position, locality.position, unit.position)
                 : 0;
             const fallbackPosition = locality ? localityLookup.get(locality.id) : null;
-            const position =
-              missionPath && missionPath.length > 1
+            // Use animated position when simulation is running, otherwise static
+            const animatedPos = animatedFleetPositions[unit.id];
+            const position = animatedPos
+              ? animatedPos
+              : missionPath && missionPath.length > 1
                 ? positionAlongRoute(missionPath, progress)
                 : fallbackPosition ?? mapPointToBengaluru(unit.position);
 
