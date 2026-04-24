@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -60,7 +61,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.activity.compose.rememberLauncherForActivityResult
 import ai.supplyguard.data.CommandPayload
 import ai.supplyguard.data.CommandPriority
+import ai.supplyguard.data.SosPayload
+import ai.supplyguard.location.LocationDisabledException
 import ai.supplyguard.location.LocationHelper
+import ai.supplyguard.permissions.PermissionManager
 import ai.supplyguard.work.WorkScheduler
 import kotlinx.coroutines.launch
 
@@ -77,21 +81,20 @@ private fun VictimAppRoot() {
     val context = LocalContext.current
     val app = context.applicationContext as VictimApp
     val meshPermissions = remember { requiredMeshPermissions() }
-    val locationPermissions = remember { requiredLocationPermissions() }
-    val allPermissions = remember { (meshPermissions + locationPermissions).distinct().toTypedArray() }
-
+    
     var hasMeshPermissions by remember { mutableStateOf(hasAllPermissions(context, meshPermissions)) }
-    var hasLocationPermission by remember { mutableStateOf(hasAllPermissions(context, locationPermissions)) }
-    val permissionLauncher = rememberLauncherForActivityResult(
+
+    val meshPermissionLauncher = rememberLauncherForActivityResult(
       contract = ActivityResultContracts.RequestMultiplePermissions(),
       onResult = {
         hasMeshPermissions = hasAllPermissions(context, meshPermissions)
-        hasLocationPermission = hasAllPermissions(context, locationPermissions)
       },
     )
 
     LaunchedEffect(Unit) {
-      if (!hasMeshPermissions || !hasLocationPermission) permissionLauncher.launch(allPermissions)
+      if (!hasMeshPermissions) {
+        meshPermissionLauncher.launch(meshPermissions)
+      }
     }
 
     LaunchedEffect(hasMeshPermissions) {
@@ -104,7 +107,6 @@ private fun VictimAppRoot() {
       val observer = LifecycleEventObserver { _, event ->
         if (event == Lifecycle.Event.ON_RESUME) {
           hasMeshPermissions = hasAllPermissions(context, meshPermissions)
-          hasLocationPermission = hasAllPermissions(context, locationPermissions)
         }
       }
       lifecycleOwner.lifecycle.addObserver(observer)
@@ -126,10 +128,8 @@ private fun VictimAppRoot() {
     val state by vm.state.collectAsStateWithLifecycle()
     VictimScreen(
       hasMeshPermissions = hasMeshPermissions,
-      hasLocationPermission = hasLocationPermission,
       commands = state.commands,
       onSendSos = vm::sendSos,
-      onRequestLocationPermission = { permissionLauncher.launch(allPermissions) },
     )
   }
 }
@@ -138,14 +138,41 @@ private fun VictimAppRoot() {
 @OptIn(ExperimentalMaterial3Api::class)
 private fun VictimScreen(
   hasMeshPermissions: Boolean,
-  hasLocationPermission: Boolean,
   commands: List<CommandPayload>,
   onSendSos: (String?, String?, String?, Double?, Double?, Float?) -> Unit,
-  onRequestLocationPermission: () -> Unit,
 ) {
   val context = LocalContext.current
+  val activity = context as? android.app.Activity
   val scope = rememberCoroutineScope()
   val locationHelper = remember { LocationHelper(context) }
+
+  var hasLocationPermission by remember { mutableStateOf(PermissionManager.isLocationGranted(context)) }
+  var showLocationRationale by remember { mutableStateOf(false) }
+  var showSettingsRedirect by remember { mutableStateOf(false) }
+
+  val locationPermissionLauncher = rememberLauncherForActivityResult(
+    contract = ActivityResultContracts.RequestMultiplePermissions(),
+  ) { result ->
+    val granted = result.values.any { it }
+    hasLocationPermission = granted
+    if (!granted && activity != null) {
+      if (!PermissionManager.shouldShowLocationRationale(activity)) {
+        showSettingsRedirect = true
+      }
+    }
+  }
+
+  // Update permission state when resuming from settings
+  val lifecycleOwner = LocalLifecycleOwner.current
+  DisposableEffect(lifecycleOwner) {
+    val observer = LifecycleEventObserver { _, event ->
+      if (event == Lifecycle.Event.ON_RESUME) {
+        hasLocationPermission = PermissionManager.isLocationGranted(context)
+      }
+    }
+    lifecycleOwner.lifecycle.addObserver(observer)
+    onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+  }
 
   var syncLabel by remember { mutableStateOf<String?>(null) }
   var name by remember { mutableStateOf("") }
@@ -156,6 +183,40 @@ private fun VictimScreen(
   var currentAccuracyMeters by remember { mutableStateOf<Float?>(null) }
   var locationStatus by remember { mutableStateOf("") }
   var isGettingLocation by remember { mutableStateOf(false) }
+
+  if (showLocationRationale) {
+    AlertDialog(
+      onDismissRequest = { showLocationRationale = false },
+      title = { Text("Location Permission Required") },
+      text = { Text("We need your location to accurately report your position during an SOS.") },
+      confirmButton = {
+        Button(onClick = {
+          showLocationRationale = false
+          locationPermissionLauncher.launch(requiredLocationPermissions())
+        }) { Text("Allow") }
+      },
+      dismissButton = {
+        Button(onClick = { showLocationRationale = false }) { Text("Cancel") }
+      }
+    )
+  }
+
+  if (showSettingsRedirect) {
+    AlertDialog(
+      onDismissRequest = { showSettingsRedirect = false },
+      title = { Text("Permission Denied") },
+      text = { Text("Location permission is permanently denied. Please enable it in App Settings to use this feature.") },
+      confirmButton = {
+        Button(onClick = {
+          showSettingsRedirect = false
+          PermissionManager.openAppSettings(context)
+        }) { Text("Open Settings") }
+      },
+      dismissButton = {
+        Button(onClick = { showSettingsRedirect = false }) { Text("Cancel") }
+      }
+    )
+  }
 
   Scaffold(
     topBar = {
@@ -300,22 +361,55 @@ private fun VictimScreen(
             Button(
               onClick = {
                 if (!hasLocationPermission) {
-                  onRequestLocationPermission()
+                  if (activity != null && PermissionManager.shouldShowLocationRationale(activity)) {
+                    showLocationRationale = true
+                  } else {
+                    locationPermissionLauncher.launch(requiredLocationPermissions())
+                  }
                   return@Button
                 }
+                
+                if (!locationHelper.isLocationEnabled()) {
+                  PermissionManager.openLocationSettings(context)
+                  return@Button
+                }
+
                 isGettingLocation = true
                 scope.launch {
-                  val locationData = locationHelper.getCurrentLocation()
-                  if (locationData != null) {
-                    currentLatitude = locationData.latitude
-                    currentLongitude = locationData.longitude
-                    currentAccuracyMeters = locationData.accuracy
-                    location = locationHelper.formatLocation(locationData.latitude, locationData.longitude)
-                    locationStatus = "GPS acquired: ${locationHelper.formatCoordinates(locationData)}"
-                  } else {
-                    locationStatus = "Could not get GPS location. Is GPS enabled?"
+                  try {
+                    val locationData = locationHelper.getCurrentLocation()
+                    if (locationData != null) {
+                      currentLatitude = locationData.latitude
+                      currentLongitude = locationData.longitude
+                      currentAccuracyMeters = locationData.accuracy
+                      val locStr = locationHelper.formatLocation(locationData.latitude, locationData.longitude)
+                      location = if (location.isNotBlank()) "$location - $locStr" else locStr
+                      
+                      // Auto-ping the command center immediately
+                      onSendSos(name, location, need, currentLatitude, currentLongitude, currentAccuracyMeters)
+                      
+                      // Clear the form to indicate success
+                      name = ""
+                      location = ""
+                      need = ""
+                      currentLatitude = null
+                      currentLongitude = null
+                      currentAccuracyMeters = null
+                      locationStatus = "Auto-pinged SOS with location!"
+                    } else {
+                      locationStatus = "Could not get GPS location."
+                    }
+                  } catch (e: LocationDisabledException) {
+                    locationStatus = "GPS is turned off."
+                    PermissionManager.openLocationSettings(context)
+                  } catch (e: ai.supplyguard.location.LocationPermissionException) {
+                    locationStatus = "Location permission not granted."
+                    showSettingsRedirect = true
+                  } catch (e: Exception) {
+                    locationStatus = "Failed to get location."
+                  } finally {
+                    isGettingLocation = false
                   }
-                  isGettingLocation = false
                 }
               },
               enabled = !isGettingLocation,
@@ -442,15 +536,21 @@ private fun requiredMeshPermissions(): Array<String> {
       Manifest.permission.BLUETOOTH_SCAN,
       Manifest.permission.BLUETOOTH_CONNECT,
       Manifest.permission.BLUETOOTH_ADVERTISE,
+      Manifest.permission.ACCESS_FINE_LOCATION,
+      Manifest.permission.ACCESS_COARSE_LOCATION,
     )
   } else if (Build.VERSION.SDK_INT >= 31) {
     arrayOf(
       Manifest.permission.BLUETOOTH_SCAN,
       Manifest.permission.BLUETOOTH_CONNECT,
       Manifest.permission.BLUETOOTH_ADVERTISE,
+      Manifest.permission.ACCESS_FINE_LOCATION,
+      Manifest.permission.ACCESS_COARSE_LOCATION,
     )
   } else {
     arrayOf(
+      Manifest.permission.ACCESS_FINE_LOCATION,
+      Manifest.permission.ACCESS_COARSE_LOCATION,
       Manifest.permission.BLUETOOTH,
       Manifest.permission.BLUETOOTH_ADMIN,
     )
@@ -458,7 +558,10 @@ private fun requiredMeshPermissions(): Array<String> {
 }
 
 private fun requiredLocationPermissions(): Array<String> {
-  return arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
+  return arrayOf(
+    Manifest.permission.ACCESS_FINE_LOCATION,
+    Manifest.permission.ACCESS_COARSE_LOCATION
+  )
 }
 
 private fun hasAllPermissions(activity: android.content.Context, permissions: Array<String>): Boolean {
