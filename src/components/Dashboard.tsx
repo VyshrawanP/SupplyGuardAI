@@ -176,11 +176,16 @@ export const Dashboard = ({
 
   return (
     <div className="dashboard-shell min-h-screen text-white">
-      <header className="sticky top-0 z-50 border-b border-white/8 bg-slate-950/55 backdrop-blur-2xl">
+      <header className="sticky top-0 z-50 border-b border-slate-500/30 bg-slate-950/70 backdrop-blur-2xl">
         <div className="mx-auto flex max-w-[1320px] items-center justify-between gap-4 px-4 py-4 lg:px-6">
-          <div className="min-w-0">
-            <p className="truncate text-[11px] uppercase tracking-[0.35em] text-cyan-200/80">SupplyGuard AI</p>
-            <h1 className="mt-1 truncate text-lg font-semibold text-white">Bengaluru Command Console</h1>
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="landing-mark flex h-8 w-8 items-center justify-center rounded-lg">
+              <span className="text-sm font-bold text-white">SG</span>
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-[11px] uppercase tracking-[0.35em] text-white/60">SupplyGuard AI</p>
+              <h1 className="mt-1 truncate text-lg font-semibold text-white">Command Console</h1>
+            </div>
           </div>
 
           <nav className="hidden items-center gap-1 rounded-full border border-white/10 bg-white/5 p-1 md:flex">
@@ -304,26 +309,11 @@ export const Dashboard = ({
                 Promo
               </button>
             ) : null}
-            {onOpenProject ? (
-              <button
-                type="button"
-                onClick={onOpenProject}
-                className="hidden rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:bg-white/10 sm:inline-flex"
-              >
-                Project
-              </button>
-            ) : null}
-            {onOpenHistory ? (
-              <button
-                type="button"
-                onClick={onOpenHistory}
-                className="hidden rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:bg-white/10 sm:inline-flex"
-              >
-                History replay
-              </button>
-            ) : null}
-            <div className="hidden rounded-full border border-white/10 bg-slate-950/55 px-3 py-2 text-xs text-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] sm:flex">
-              <Wifi className="mr-2 h-3.5 w-3.5 text-cyan-300" />
+            <button type="button" onClick={resetSimulation} className="btn-outline">
+              <RotateCcw className="h-4 w-4" />
+              Reset
+            </button>
+            <div className="rounded-lg border border-slate-500/30 bg-slate-900/70 px-3 py-2 text-xs text-slate-200">
               Signal {signalQuality}% {signalLabel}
             </div>
           </div>
@@ -457,10 +447,10 @@ export const Dashboard = ({
         )}
       </main>
 
-      <footer className="border-t border-white/8 bg-slate-950/60">
-        <div className="mx-auto flex max-w-[1320px] flex-col gap-3 px-4 py-6 text-sm text-slate-400 sm:flex-row sm:items-center sm:justify-between lg:px-6">
-          <p>SupplyGuard AI prototype</p>
-          <p>Offline-friendly simulation | Command console prototype</p>
+      <footer className="border-t border-slate-500/30 bg-slate-950/70">
+        <div className="mx-auto flex max-w-[1320px] flex-col gap-3 px-4 py-6 text-sm text-white/60 sm:flex-row sm:items-center sm:justify-between lg:px-6">
+          <p>SupplyGuard AI</p>
+          <p>Offline-friendly simulation | Command console</p>
         </div>
       </footer>
     </div>

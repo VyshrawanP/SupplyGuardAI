@@ -1,0 +1,69 @@
+/* Shared styles for enterprise landing + headers. */
+
+.landing-mark {
+  background: linear-gradient(135deg, #4f7cff, #3562de);
+  border: 1px solid rgba(148, 163, 184, 0.36);
+  box-shadow: 0 10px 24px rgba(52, 95, 219, 0.4);
+  color: #ffffff;
+}
+
+.landing-link {
+  color: rgba(184, 194, 211, 0.9);
+  text-decoration: none;
+}
+
+.landing-link:hover {
+  color: #ffffff;
+}
+
+.landing-muted {
+  color: rgba(148, 163, 184, 0.95);
+}
+
+.landing-subtitle {
+  color: rgba(184, 194, 211, 0.98);
+}
+
+.landing-nav {
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(7, 11, 20, 0.82);
+  backdrop-filter: blur(12px);
+}
+
+.landing-nav-link {
+  color: rgba(184, 194, 211, 0.86);
+  font-weight: 500;
+}
+
+.landing-nav-link:hover {
+  color: #ffffff;
+}
+
+.landing-card {
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: linear-gradient(160deg, rgba(16, 24, 40, 0.92), rgba(14, 27, 45, 0.88));
+  border-radius: 22px;
+  box-shadow: var(--shadow-md);
+}
+
+.landing-card-light {
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  background: #f8fafc;
+  border-radius: 22px;
+  box-shadow: 0 10px 34px rgba(15, 23, 42, 0.08);
+}
+
+.landing-soft-chip {
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: rgba(15, 23, 38, 0.52);
+  color: rgba(226, 232, 240, 0.96);
+}
+
+.landing-section-light {
+  background: #eef2f9;
+}
+
+.landing-section-dark {
+  background: linear-gradient(180deg, rgba(7, 11, 20, 0.98), rgba(10, 16, 28, 0.98));
+}

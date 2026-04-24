@@ -121,8 +121,14 @@ export default function App() {
   }, [startMesh]);
 
   return (
-    <div className="min-h-screen text-white">
-      {view === 'history' ? (
+    <div className="app-shell min-h-screen">
+      {view === 'landing' ? (
+        <LandingPage
+          onOpenDashboard={() => navigate('dashboard')}
+          onOpenDocs={(docId) => navigate('project', { docId: docId ?? 'overview' })}
+          onOpenDownloads={() => navigate('project', { docId: 'overview', downloadsOpen: true })}
+        />
+      ) : view === 'history' ? (
         <IndiaHistoryReplay onBack={() => navigate('dashboard')} />
       ) : view === 'project' ? (
         <ProjectPortal
