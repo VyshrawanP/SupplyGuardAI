@@ -1,0 +1,689 @@
+/* ============================================================
+   SUPPLYGUARD AI — Landing Page Styles
+   Clean, professional, no gradients/glows
+   ============================================================ */
+
+/* ── Page ── */
+.landing-page {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text-primary);
+}
+
+/* ── Navigation ── */
+.landing-nav {
+  background: rgba(10, 14, 23, 0.85);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.landing-mark {
+  background: var(--accent);
+  border: none;
+  box-shadow: none;
+}
+
+.landing-brand {
+  color: var(--text-primary);
+}
+
+.landing-link {
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.landing-link:hover {
+  color: var(--text-primary);
+}
+
+/* ── Text helpers ── */
+.landing-muted    { color: var(--text-tertiary); }
+.landing-subtitle { color: var(--text-secondary); }
+.landing-body     { color: var(--text-secondary); }
+.landing-ok       { color: var(--success); }
+
+.landing-action-link {
+  color: var(--accent);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.landing-action-link:hover {
+  color: var(--accent-hover);
+}
+
+/* ── Hero section ── */
+.hero-section {
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid var(--border);
+}
+
+.hero-section::before {
+  content: none; /* No gradient blob */
+}
+
+.landing-title {
+  color: var(--text-primary);
+  -webkit-text-fill-color: var(--text-primary);
+  background: none;
+  -webkit-background-clip: unset;
+  background-clip: unset;
+}
+
+/* ── Panels ── */
+.landing-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+}
+
+.landing-preview-map {
+  background: var(--bg-raised);
+  border-color: var(--border);
+}
+
+.landing-preview-map .border-t {
+  border-color: var(--border);
+}
+
+.landing-live-dot {
+  background: var(--success);
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
+}
+
+/* ── Status bubbles ── */
+.status-bubble     { background: var(--bg-raised); }
+.status-bubble--ok   { border-color: var(--success); color: var(--success); }
+.status-bubble--warn { border-color: var(--warning); color: var(--warning); }
+.status-bubble--crit { border-color: var(--critical); color: var(--critical); }
+
+/* ── Section borders ── */
+.problem-section,
+.simulation-section,
+.validation-section,
+.differentiators-section,
+.hospital-section,
+.timeline-section,
+.comparison-section,
+.architecture-section,
+.deployment-section {
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── Quote block ── */
+.landing-quote {
+  border-left: 3px solid var(--accent);
+  background: var(--accent-dim);
+  border-radius: var(--radius);
+}
+
+.landing-kicker {
+  color: var(--text-tertiary);
+}
+
+/* ── Buttons ── */
+.btn-primary,
+.btn-secondary,
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius);
+  font-size: 15px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  line-height: 1;
+}
+
+.btn-primary {
+  color: #ffffff;
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-secondary {
+  color: var(--text-primary);
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+.btn-secondary:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-hover);
+}
+
+.btn-outline {
+  color: var(--text-secondary);
+  background: transparent;
+  border-color: var(--border);
+  padding: var(--space-3) var(--space-4);
+  font-size: 14px;
+}
+
+.btn-outline:hover {
+  color: var(--text-primary);
+  background: var(--surface);
+  border-color: var(--border-hover);
+}
+
+/* ── Cards ── */
+.landing-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.15s ease;
+}
+
+.landing-card:hover {
+  border-color: var(--border-hover);
+}
+
+.landing-card--active {
+  border-color: var(--accent);
+}
+
+.landing-card-sub {
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+
+/* ── Icons ── */
+.landing-icon {
+  color: var(--accent);
+}
+
+/* ── Tables ── */
+.landing-table {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.landing-table-head-row {
+  background: var(--bg-raised);
+}
+
+.landing-table-row {
+  border-color: var(--border);
+}
+
+.landing-table-row:hover {
+  background: var(--surface-hover);
+}
+
+/* ── Footer ── */
+.landing-footer {
+  background: var(--bg-inset);
+  border-color: var(--border);
+}
+
+.landing-footer-bottom {
+  border-color: var(--border);
+}
+
+/* ============================================================
+   NEW COMPONENTS: Katrina Timeline
+   ============================================================ */
+.katrina-timeline {
+  position: relative;
+  padding-left: var(--space-7);
+}
+
+.katrina-timeline::before {
+  content: '';
+  position: absolute;
+  left: 15px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--border);
+}
+
+.katrina-event {
+  position: relative;
+  padding-bottom: var(--space-6);
+}
+
+.katrina-event:last-child {
+  padding-bottom: 0;
+}
+
+.katrina-event::before {
+  content: '';
+  position: absolute;
+  left: calc(-1 * var(--space-7) + 10px);
+  top: 6px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--bg);
+}
+
+.katrina-event--fema::before {
+  border-color: var(--critical);
+  background: var(--critical);
+}
+
+.katrina-event--sg::before {
+  border-color: var(--success);
+  background: var(--success);
+}
+
+.katrina-event--neutral::before {
+  border-color: var(--text-tertiary);
+  background: var(--text-tertiary);
+}
+
+.katrina-event__time {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  margin-bottom: var(--space-1);
+}
+
+.katrina-event__title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-1);
+}
+
+.katrina-event__desc {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* ============================================================
+   NEW COMPONENTS: Hospital Capacity Showcase
+   ============================================================ */
+.hospital-showcase {
+  display: grid;
+  gap: var(--space-5);
+}
+
+@media (min-width: 768px) {
+  .hospital-showcase {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.hospital-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  transition: border-color 0.15s ease;
+}
+
+.hospital-card:hover {
+  border-color: var(--border-hover);
+}
+
+.hospital-card__name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-3);
+}
+
+.hospital-card__stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-2);
+}
+
+.hospital-card__stat-label {
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+
+.hospital-card__stat-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.capacity-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--bg-raised);
+  overflow: hidden;
+  margin-top: var(--space-3);
+}
+
+.capacity-bar__fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.capacity-bar__fill--ok   { background: var(--success); }
+.capacity-bar__fill--warn { background: var(--warning); }
+.capacity-bar__fill--crit { background: var(--critical); }
+
+.hospital-card__status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.hospital-card__status--ok {
+  background: var(--success-dim);
+  color: var(--success);
+}
+
+.hospital-card__status--warn {
+  background: var(--warning-dim);
+  color: var(--warning);
+}
+
+.hospital-card__status--crit {
+  background: var(--critical-dim);
+  color: var(--critical);
+}
+
+/* ============================================================
+   NEW COMPONENTS: Before/After Comparison
+   ============================================================ */
+.comparison-grid {
+  display: grid;
+  gap: var(--space-5);
+}
+
+@media (min-width: 768px) {
+  .comparison-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.comparison-col {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+}
+
+.comparison-col--before {
+  border-top: 3px solid var(--critical);
+}
+
+.comparison-col--after {
+  border-top: 3px solid var(--success);
+}
+
+.comparison-col__title {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: var(--space-5);
+}
+
+.comparison-col--before .comparison-col__title { color: var(--critical); }
+.comparison-col--after  .comparison-col__title { color: var(--success); }
+
+.comparison-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.comparison-row:last-child {
+  border-bottom: none;
+}
+
+.comparison-row__label {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.comparison-row__value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* ============================================================
+   NEW COMPONENTS: Architecture diagram
+   ============================================================ */
+.arch-grid {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+}
+
+.arch-node {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-3) var(--space-4);
+  text-align: center;
+  transition: border-color 0.15s ease;
+}
+
+.arch-node:hover {
+  border-color: var(--accent);
+}
+
+.arch-node__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-1);
+}
+
+.arch-node__tech {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+/* ============================================================
+   NEW COMPONENTS: Metric strip (hero proof)
+   ============================================================ */
+.metric-strip {
+  display: grid;
+  gap: var(--space-4);
+}
+
+@media (min-width: 640px) {
+  .metric-strip {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.metric-strip__item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  text-align: center;
+}
+
+.metric-strip__value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--accent-text);
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.metric-strip__label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: var(--space-2);
+  line-height: 1.4;
+}
+
+.metric-strip__source {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: var(--space-1);
+}
+
+/* ============================================================
+   NEW COMPONENTS: App download cards
+   ============================================================ */
+.app-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  transition: border-color 0.15s ease;
+}
+
+.app-card:hover {
+  border-color: var(--border-hover);
+}
+
+.app-card__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.app-card__icon--command  { background: var(--accent-dim); color: var(--accent); }
+.app-card__icon--rescue   { background: var(--success-dim); color: var(--success); }
+.app-card__icon--victim   { background: var(--warning-dim); color: var(--warning); }
+
+.app-card__title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.app-card__desc {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.app-card__meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.app-card__download {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius);
+  border: 1px solid var(--accent);
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+  width: fit-content;
+}
+
+.app-card__download:hover {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+/* ============================================================
+   SCROLL ANIMATIONS (intersection observer)
+   ============================================================ */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger children */
+.reveal-stagger > .reveal:nth-child(1) { transition-delay: 0ms; }
+.reveal-stagger > .reveal:nth-child(2) { transition-delay: 80ms; }
+.reveal-stagger > .reveal:nth-child(3) { transition-delay: 160ms; }
+.reveal-stagger > .reveal:nth-child(4) { transition-delay: 240ms; }
+.reveal-stagger > .reveal:nth-child(5) { transition-delay: 320ms; }
+
+/* ============================================================
+   AMBULANCE ROUTING ANIMATION
+   ============================================================ */
+@keyframes ambulance-move {
+  0%   { left: 0%; opacity: 0; }
+  10%  { opacity: 1; }
+  45%  { left: 35%; }
+  55%  { left: 35%; } /* pause at full hospital */
+  60%  { left: 40%; }
+  90%  { left: 85%; }
+  100% { left: 85%; opacity: 0; }
+}
+
+.ambulance-route {
+  position: relative;
+  height: 32px;
+  margin: var(--space-3) 0;
+}
+
+.ambulance-icon {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 20px;
+  animation: ambulance-move 6s ease-in-out infinite;
+}
+
+/* ============================================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================================ */
+@media (max-width: 767px) {
+  .metric-strip__value {
+    font-size: 24px;
+  }
+  
+  .katrina-timeline {
+    padding-left: var(--space-6);
+  }
+}

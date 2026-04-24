@@ -144,7 +144,7 @@ export function IndiaHistoryReplay({
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#050b12_0%,#09131b_42%,#0e1820_100%)] text-white">
-      <header className="sticky top-0 z-50 border-b border-white/8 bg-slate-950/55 backdrop-blur-2xl">
+      <header className="sticky top-0 z-[1000] border-b border-white/8 bg-slate-950/55 backdrop-blur-2xl">
         <div className="mx-auto flex max-w-[1480px] items-center justify-between gap-4 px-4 py-4 lg:px-8">
           <div className="flex items-center gap-3">
             <button

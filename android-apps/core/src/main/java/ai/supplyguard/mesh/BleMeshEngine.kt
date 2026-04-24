@@ -65,11 +65,15 @@ class BleMeshEngine(
   private var loopJob: Job? = null
 
   @Volatile private var running: Boolean = false
-  @Volatile private var isAdvertising: Boolean = false
 
   fun start() {
     if (running) return
     running = true
+
+    try {
+      advertiser = adapter?.bluetoothLeAdvertiser
+      scanner = adapter?.bluetoothLeScanner
+    } catch (_: Throwable) {}
 
     try { startGattServer() } catch (_: Throwable) {}
     try { startAdvertising() } catch (_: Throwable) {}
@@ -79,15 +83,14 @@ class BleMeshEngine(
 
   fun stop() {
     running = false
-    isAdvertising = false
     loopJob?.cancel()
     loopJob = null
 
     try {
-      adapter?.bluetoothLeScanner?.stopScan(scanCallback)
+      scanner?.stopScan(scanCallback)
     } catch (_: Throwable) {}
     try {
-      adapter?.bluetoothLeAdvertiser?.stopAdvertising(advertiseCallback)
+      advertiser?.stopAdvertising(advertiseCallback)
     } catch (_: Throwable) {}
 
     activeConnections.values.forEach {
@@ -124,18 +127,8 @@ class BleMeshEngine(
     }
   }
 
-  private val advertiseCallback = object : AdvertiseCallback() {
-    override fun onStartSuccess(settingsInEffect: AdvertiseSettings?) {
-      isAdvertising = true
-    }
-    override fun onStartFailure(errorCode: Int) {
-      isAdvertising = false
-    }
-  }
-
   private fun startAdvertising() {
-    if (isAdvertising) return
-    val adv = try { adapter?.bluetoothLeAdvertiser } catch (_: Throwable) { null } ?: return
+    val adv = advertiser ?: return
     try {
       val settings = AdvertiseSettings.Builder()
         .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED)
@@ -149,10 +142,7 @@ class BleMeshEngine(
         .build()
 
       adv.startAdvertising(settings, data, advertiseCallback)
-      isAdvertising = true
-    } catch (_: Throwable) {
-      isAdvertising = false
-    }
+    } catch (_: Throwable) {}
   }
 
   @SuppressLint("MissingPermission")
@@ -163,15 +153,13 @@ class BleMeshEngine(
 
     while (running) {
       try {
-        if (gattServer == null) startGattServer() // retry if failed initially
-        if (!isAdvertising) startAdvertising() // retry if failed initially
         startScan()
         delay(scanOnMs)
       } catch (_: Throwable) {
         // Keep loop alive.
       } finally {
         try {
-          adapter?.bluetoothLeScanner?.stopScan(scanCallback)
+          scanner?.stopScan(scanCallback)
         } catch (_: Throwable) {}
       }
       delay(scanOffMs)
@@ -180,7 +168,7 @@ class BleMeshEngine(
 
   @SuppressLint("MissingPermission")
   private fun startScan() {
-    val s = try { adapter?.bluetoothLeScanner } catch (_: Throwable) { null } ?: return
+    val s = scanner ?: return
     val filters = listOf(
       ScanFilter.Builder()
         .setServiceUuid(ParcelUuid(BleUuids.SERVICE_UUID))
@@ -193,7 +181,7 @@ class BleMeshEngine(
     s.startScan(filters, settings, scanCallback)
   }
 
-
+  private val advertiseCallback = object : AdvertiseCallback() {}
 
   private val scanCallback = object : ScanCallback() {
     override fun onScanResult(callbackType: Int, result: ScanResult) {

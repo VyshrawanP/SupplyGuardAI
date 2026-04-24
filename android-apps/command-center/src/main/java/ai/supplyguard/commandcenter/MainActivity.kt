@@ -64,20 +64,12 @@ private fun CommandCenterRoot() {
     var showWebUi by remember { mutableStateOf(false) }
 
     var hasPermissions by remember { mutableStateOf(hasAllPermissions(context, permissions)) }
-    
     val permissionLauncher = rememberLauncherForActivityResult(
       contract = ActivityResultContracts.RequestMultiplePermissions(),
-      onResult = { result -> 
-        hasPermissions = result.values.all { it } 
-      },
+      onResult = { result -> hasPermissions = result.values.all { it } },
     )
 
-    // Launch mesh permissions only if needed. Command Center has no "Get Location" button.
-    LaunchedEffect(Unit) { 
-      if (!hasPermissions) {
-        permissionLauncher.launch(permissions)
-      }
-    }
+    LaunchedEffect(Unit) { if (!hasPermissions) permissionLauncher.launch(permissions) }
     LaunchedEffect(hasPermissions) { if (hasPermissions) app.meshEngine.start() else app.meshEngine.stop() }
     DisposableEffect(Unit) { onDispose { app.meshEngine.stop() } }
 
@@ -553,19 +545,15 @@ private fun WebGatewayScreen(
 
 // ── Permissions ──────────────────────────────────────────────────────────────
 
-
-
 private fun requiredMeshPermissions(): Array<String> {
   return if (Build.VERSION.SDK_INT >= 33) {
     arrayOf(Manifest.permission.POST_NOTIFICATIONS, Manifest.permission.BLUETOOTH_SCAN,
-      Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.BLUETOOTH_ADVERTISE,
-      Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+      Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.BLUETOOTH_ADVERTISE)
   } else if (Build.VERSION.SDK_INT >= 31) {
     arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT,
-      Manifest.permission.BLUETOOTH_ADVERTISE,
-      Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+      Manifest.permission.BLUETOOTH_ADVERTISE)
   } else {
-    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.BLUETOOTH,
+    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.BLUETOOTH,
       Manifest.permission.BLUETOOTH_ADMIN)
   }
 }

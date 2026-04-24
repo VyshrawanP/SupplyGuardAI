@@ -1,15 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, BookOpen, Download, LayoutDashboard, Megaphone, Menu, Search, X } from 'lucide-react';
+import { ArrowLeft, BookOpen, Download, LayoutDashboard, Menu, Search, X } from 'lucide-react';
 import { extractMarkdownHeadings, markdownToHtml, type MarkdownHeading } from './markdown';
+import logoSrc from '../../assets/logo.png';
 
-import README from '../../../README.md?raw';
 import SOLUTION_CHALLENGE from '../../../SOLUTION_CHALLENGE.md?raw';
 import ARCHITECTURE from '../../../docs/ARCHITECTURE.md?raw';
 import JUDGE_QUICKSTART from '../../../docs/JUDGE_QUICKSTART.md?raw';
 import PRIVACY_SECURITY from '../../../docs/PRIVACY_SECURITY.md?raw';
 import RESPONSIBLE_AI from '../../../docs/RESPONSIBLE_AI.md?raw';
-import DEMO_CHECKLIST from '../../../docs/DEMO_CHECKLIST.md?raw';
-import VIDEO_SCRIPT from '../../../docs/VIDEO_SCRIPT.md?raw';
 
 type DocPage = {
   id: string;
@@ -26,9 +24,9 @@ SupplyGuard AI is a disaster logistics platform for route disruption detection, 
 
 - A judge-friendly overview (problem → solution → impact → demo)
 - Architecture and data-flow notes
-- Privacy & security posture (demo vs production)
+- Privacy \& security posture (demo vs production)
 - Responsible AI boundary (AI explains; deterministic engines decide)
-- A 5-minute quickstart and demo/video scripts
+- A 5-minute quickstart
 
 ## Quickstart (local-only demo)
 
@@ -49,9 +47,138 @@ SupplyGuardAI/
 ├── frontend/            (Flutter field + command app)
 ├── firestore/           (rules + indexes)
 ├── docker/              (offline deployment)
-└── docs/                (architecture, quickstart, RAI, security, scripts)
+└── docs/                (architecture, quickstart, RAI, security)
 \`\`\`
 `;
+
+const DRONE_SERVICES = `# Autonomous Drone Food & Medicine Delivery
+
+When roads are flooded or blocked by debris, ground vehicles cannot reach victims. SupplyGuard AI automatically deploys drones to deliver critical supplies — no human dispatcher needed.
+
+## How It Works
+
+### 1. Automatic Trigger
+The system monitors hospital medicine stock and food reserves in real-time. When any hospital drops below **45% medicine supply** or a locality's food stock falls under **40%**, the drone dispatch engine activates automatically.
+
+### 2. Route Calculation
+The drone engine selects the nearest relief hub with available inventory. Unlike ground vehicles, drones bypass all road-level disruptions — flooded streets, blocked bridges, and debris fields are irrelevant.
+
+### 3. Payload Optimization
+Each drone sortie is optimized for weight and priority:
+- **Critical medicines** (insulin, antibiotics, trauma kits) are prioritized
+- **Food packets** are dispatched in bulk when medicine demand is met
+- **Baby supplies and water purification tablets** are included for shelters
+
+### 4. Delivery Confirmation
+On arrival, the drone drops payload at a pre-designated safe zone. The Volunteer App confirms receipt and updates the command console inventory.
+
+## Automation Rules
+
+| Trigger | Threshold | Action |
+|---------|-----------|--------|
+| Hospital medicine stock | < 45% | Drone sortie from nearest hub |
+| Locality food stock | < 40% | Food convoy + drone backup |
+| Route blocked | All ground routes closed | Drone-only delivery mode |
+| Power backup critical | < 20% at hospital | Generator fuel drop via drone |
+
+## Technical Implementation
+
+- **Engine**: Deterministic rule-based dispatch (no AI black box)
+- **Routing**: Direct line-of-sight calculation with wind speed adjustment
+- **Capacity**: Each drone carries up to 5kg payload
+- **Range**: 25km radius from relief hub
+- **Battery**: Auto-return when battery hits 20%
+
+## What Makes This Different
+
+Most disaster platforms treat drones as a manual add-on. In SupplyGuard AI, drone dispatch is **automatic and rule-driven** — the system doesn't wait for a human to notice a shortage. The moment medicine stock drops, the drone is already en route.
+`;
+
+const MOBILE_APPS = `# Mobile Apps — 3-App Offline Mesh Network
+
+SupplyGuard AI ships three companion Android apps that work together to create a communication chain even when cell towers are down.
+
+## App 1: Victim App
+**For**: People trapped or in danger during a disaster
+
+### Features
+- **SOS Beacon**: One-tap emergency signal with GPS coordinates — works with zero internet
+- **Bluetooth Mesh Relay**: SOS messages hop between nearby phones (up to 100m per hop) until they reach an internet-connected device
+- **Medical Info Sharing**: Victims can pre-fill blood type, allergies, and current medications so hospitals can prepare triage
+- **Shelter Directions**: Receives offline shelter locations and rescue ETAs from the mesh network
+- **Battery-Aware**: Reduces Bluetooth scan frequency when battery is low to extend device life
+
+### Technical Details
+- Built with Kotlin + Jetpack Compose
+- Uses Android BLE (Bluetooth Low Energy) for mesh communication
+- Room database for offline message persistence
+- Message deduplication via UUID to prevent relay loops
+
+### Download
+[Download Victim App APK](/downloads/apk/victim)
+
+---
+
+## App 2: Rescue / Volunteer App
+**For**: Field responders, NGO workers, and trained volunteers
+
+### Features
+- **Receive SOS Locations**: See victim positions on an offline map
+- **Mesh Bridge**: Acts as a relay node — automatically forwards SOS messages from offline victims toward internet-connected areas
+- **Road Condition Reports**: Report flooded roads, collapsed bridges, and blocked paths
+- **Task Queue**: Receives AI-optimized rescue assignments when any connectivity is available
+- **Resource Tracking**: Log distributed supplies (food, water, medicine) for inventory sync
+
+### Technical Details
+- Built with Kotlin + Jetpack Compose
+- Bidirectional BLE mesh communication (receives AND forwards)
+- Offline map tile caching for field operation
+- Firebase sync with conflict resolution on reconnect
+
+### Download
+[Download Rescue App APK](/downloads/apk/rescue)
+
+---
+
+## App 3: Command Center App
+**For**: Disaster coordinators and government officials
+
+### Features
+- **Aggregated SOS View**: All victim reports on a single map, color-coded by severity and time
+- **AI Dispatch**: Automatically dispatches ambulances, drones, and food convoys based on victim density and hospital capacity
+- **Hospital Bed Tracking**: Real-time bed availability from Firebase — routes ambulances to hospitals with open beds
+- **Full Offline Mode**: Local simulation engine runs without server connection
+- **Cross-Platform**: Available as Android app and web dashboard (this site)
+
+### Technical Details
+- Built with Kotlin + Jetpack Compose (Android) and React + Vite (Web)
+- Firebase Firestore for real-time sync
+- OSRM integration for real-road routing
+- WebSocket mesh signaling for peer-to-peer communication
+
+### Download
+[Download Command Center APK](/downloads/apk/command-center)
+
+---
+
+## How the Mesh Network Connects Them
+
+\`\`\`text
+[Victim Phone] --Bluetooth--> [Volunteer Phone] --Wi-Fi/Cell--> [Command Console]
+                                                                      |
+                                                              AI Dispatch Engine
+                                                                      |
+                                                            [Drone / Ambulance]
+\`\`\`
+
+1. **Victim** sends SOS via Bluetooth — no internet required
+2. **Volunteer** phones relay the SOS via mesh hops until reaching a connected device
+3. **Command Console** receives the SOS, plots it on the map, and dispatches rescue
+4. **Drones and ambulances** are deployed automatically based on victim location and severity
+
+The entire chain works even when cell towers are down. Only ONE device in the chain needs internet access to bridge offline victims to the command center.
+`;
+
 
 export function ProjectPortal({
   onBackToConsole,
@@ -59,14 +186,12 @@ export function ProjectPortal({
   onNavigateDoc,
   downloadsOpen,
   onSetDownloadsOpen,
-  onOpenPromo,
 }: {
   onBackToConsole: () => void;
   activeDocId: string | null;
   onNavigateDoc: (docId: string | null) => void;
   downloadsOpen: boolean;
   onSetDownloadsOpen: (open: boolean) => void;
-  onOpenPromo?: () => void;
 }) {
   const pages: DocPage[] = useMemo(
     () => [
@@ -75,6 +200,18 @@ export function ProjectPortal({
         title: 'Overview',
         description: 'Basics, quickstart, and repo map.',
         body: OVERVIEW,
+      },
+      {
+        id: 'drone-services',
+        title: 'Drone Services',
+        description: 'Autonomous food & medicine delivery system.',
+        body: DRONE_SERVICES,
+      },
+      {
+        id: 'mobile-apps',
+        title: 'Mobile Apps',
+        description: '3-app offline mesh network for victim rescue.',
+        body: MOBILE_APPS,
       },
       {
         id: 'solution-challenge',
@@ -105,24 +242,6 @@ export function ProjectPortal({
         title: 'Privacy & Security',
         description: 'Roles, rules, and recommended posture.',
         body: PRIVACY_SECURITY,
-      },
-      {
-        id: 'demo-checklist',
-        title: 'Demo Checklist',
-        description: 'Run-of-show for recording and judging.',
-        body: DEMO_CHECKLIST,
-      },
-      {
-        id: 'video-script',
-        title: 'Video Script',
-        description: 'Suggested 3-minute narrative.',
-        body: VIDEO_SCRIPT,
-      },
-      {
-        id: 'readme',
-        title: 'README',
-        description: 'Full repo overview and setup details.',
-        body: README,
       },
     ],
     [],
@@ -205,11 +324,14 @@ export function ProjectPortal({
 
   return (
     <div className="min-h-screen bg-[var(--bg)] text-white">
-      <header className="sticky top-0 z-50 border-b border-white/8 bg-slate-950/60 backdrop-blur-2xl">
+      <header className="sticky top-0 z-[1000] border-b border-white/10 bg-black/70 backdrop-blur-2xl">
         <div className="mx-auto flex max-w-[1320px] flex-wrap items-center justify-between gap-3 px-4 py-4 lg:px-6">
-          <div className="min-w-0">
-            <p className="truncate text-[11px] uppercase tracking-[0.35em] text-cyan-200/80">SupplyGuard AI</p>
-            <h1 className="mt-1 truncate text-lg font-semibold text-white">Project website</h1>
+          <div className="flex min-w-0 items-center gap-3">
+            <img src={logoSrc} alt="SupplyGuard AI" className="h-8 w-8 rounded" />
+            <div className="min-w-0">
+              <p className="truncate text-[11px] uppercase tracking-[0.35em] text-white/60">SupplyGuard AI</p>
+              <h1 className="mt-1 truncate text-lg font-semibold text-white">Project Docs</h1>
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
@@ -222,12 +344,6 @@ export function ProjectPortal({
               <Menu className="h-3.5 w-3.5" />
               Docs
             </button>
-            {onOpenPromo ? (
-              <button type="button" onClick={onOpenPromo} className="ghost-button text-xs">
-                <Megaphone className="h-3.5 w-3.5" />
-                Promo
-              </button>
-            ) : null}
             <button type="button" onClick={() => onSetDownloadsOpen(true)} className="ghost-button text-xs">
               <Download className="h-3.5 w-3.5" />
               Downloads
@@ -241,15 +357,15 @@ export function ProjectPortal({
       </header>
 
       {downloadsOpen ? (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm" role="dialog" aria-modal="true">
+        <div className="fixed inset-0 z-[2000] bg-black/80 backdrop-blur-sm" role="dialog" aria-modal="true">
           <div className="absolute inset-0" onClick={() => onSetDownloadsOpen(false)} />
-          <div className="absolute left-1/2 top-[92px] w-[92vw] max-w-[760px] -translate-x-1/2 rounded-[22px] border border-white/10 bg-slate-950/85 p-4 shadow-[0_30px_80px_rgba(0,0,0,0.55)] backdrop-blur-2xl sm:p-6">
+          <div className="absolute left-1/2 top-[92px] w-[92vw] max-w-[760px] -translate-x-1/2 rounded-[22px] border border-white/10 bg-black/80 p-4 shadow-[0_30px_80px_rgba(0,0,0,0.55)] backdrop-blur-2xl sm:p-6">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-[11px] uppercase tracking-[0.35em] text-slate-400">Downloads</p>
-                <h2 className="mt-2 text-xl font-semibold text-white">Get all 3 apps</h2>
-                <p className="mt-2 text-sm leading-6 text-slate-300">
-                  Install one app per role (Coordinator / Responder / Citizen), or download all APKs for an end-to-end demo.
+                <p className="text-[11px] uppercase tracking-[0.35em] text-white/60">Downloads</p>
+                <h2 className="mt-2 text-xl font-semibold text-white">Download Apps</h2>
+                <p className="mt-2 text-sm leading-6 text-white/70">
+                  Install each app for its role — Coordinator, Responder, or Citizen.
                 </p>
               </div>
               <button type="button" className="ghost-button px-2 py-1" onClick={() => onSetDownloadsOpen(false)}>
@@ -309,52 +425,18 @@ export function ProjectPortal({
                   </div>
                 </div>
               </a>
-              <a href="/downloads/apk-all" className="panel-surface rounded-[18px] p-4 transition hover:bg-white/6">
-                <p className="text-sm font-semibold text-white">Download all APKs</p>
-                <p className="mt-1 text-xs leading-5 text-slate-400">Single zip with all three apps.</p>
-              </a>
             </div>
 
             <div className="mt-3 rounded-[18px] border border-white/10 bg-slate-950/40 p-4 text-xs leading-5 text-slate-300">
               Install note: if Android blocks installation, enable “Install unknown apps” for your browser, then retry.
             </div>
 
-            <div className="mt-4 rounded-[18px] border border-white/10 bg-white/5 p-4">
-              <p className="text-sm font-semibold text-slate-200">Also available (source bundles)</p>
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                <a href="/downloads/all" className="rounded-[14px] border border-white/10 bg-slate-950/40 px-3 py-3 text-left transition hover:bg-white/5">
-                  <p className="text-sm font-semibold text-white">Download everything (source)</p>
-                  <p className="mt-1 text-xs text-slate-400">Web + Flutter + Android sources</p>
-                </a>
-                <a
-                  href="/downloads/web-console"
-                  className="rounded-[14px] border border-white/10 bg-slate-950/40 px-3 py-3 text-left transition hover:bg-white/5"
-                >
-                  <p className="text-sm font-semibold text-white">Web console (source)</p>
-                  <p className="mt-1 text-xs text-slate-400">React + Vite project files</p>
-                </a>
-                <a
-                  href="/downloads/flutter-frontend"
-                  className="rounded-[14px] border border-white/10 bg-slate-950/40 px-3 py-3 text-left transition hover:bg-white/5"
-                >
-                  <p className="text-sm font-semibold text-white">Flutter app (source)</p>
-                  <p className="mt-1 text-xs text-slate-400">`frontend/` project</p>
-                </a>
-                <a
-                  href="/downloads/android-mesh"
-                  className="rounded-[14px] border border-white/10 bg-slate-950/40 px-3 py-3 text-left transition hover:bg-white/5"
-                >
-                  <p className="text-sm font-semibold text-white">Android apps (source)</p>
-                  <p className="mt-1 text-xs text-slate-400">`android-apps/` projects</p>
-                </a>
-              </div>
-            </div>
           </div>
         </div>
       ) : null}
 
       {sidebarOpen ? (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm lg:hidden" role="dialog" aria-modal="true">
+        <div className="fixed inset-0 z-[2000] bg-slate-950/70 backdrop-blur-sm lg:hidden" role="dialog" aria-modal="true">
           <div className="absolute inset-0" onClick={() => setSidebarOpen(false)} />
           <div className="absolute left-0 top-0 h-full w-[92vw] max-w-[420px] border-r border-white/10 bg-slate-950/90 p-4">
             <div className="flex items-center justify-between gap-3">
