@@ -60,30 +60,8 @@ const servicePalette: Record<string, string> = {
 };
 
 const osrmRouteCache = new globalThis.Map<string, LatLng[]>();
-const DEFAULT_OSRM_BASE_URL = 'https://router.project-osrm.org/route/v1/driving';
+const OSRM_BASE_URL = 'https://router.project-osrm.org/route/v1/driving';
 const OSRM_STORAGE_PREFIX = 'supplyguard-osrm-route:';
-
-const resolveOsrmBaseUrl = () => {
-  const raw = (import.meta.env.VITE_LOCAL_OSRM_URL || import.meta.env.VITE_OSRM_URL || '').trim();
-  if (!raw) return DEFAULT_OSRM_BASE_URL;
-  const base = raw.endsWith('/') ? raw.slice(0, -1) : raw;
-  if (base.includes('/route/v1/')) return base;
-  return `${base}/route/v1/driving`;
-};
-
-const resolveTileUrlTemplate = () => {
-  const explicit = (import.meta.env.VITE_TILE_URL_TEMPLATE || '').trim();
-  if (explicit) return explicit;
-
-  const tileServerBase = (import.meta.env.VITE_LOCAL_TILESERVER_URL || '').trim();
-  if (tileServerBase) {
-    const base = tileServerBase.endsWith('/') ? tileServerBase.slice(0, -1) : tileServerBase;
-    const style = (import.meta.env.VITE_TILE_STYLE || 'basic').trim() || 'basic';
-    return `${base}/styles/${encodeURIComponent(style)}/{z}/{x}/{y}.png`;
-  }
-
-  return 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-};
 
 const routeColor = (status: string) => {
   if (status === 'blocked') {
@@ -248,7 +226,7 @@ async function fetchOsrmRoute(points: LatLng[]): Promise<LatLng[]> {
 
   const coordinates = cleanPoints.map((point) => `${point.lng},${point.lat}`).join(';');
   const response = await fetch(
-    `${resolveOsrmBaseUrl()}/${coordinates}?overview=full&geometries=geojson&steps=false&continue_straight=false`,
+    `${OSRM_BASE_URL}/${coordinates}?overview=full&geometries=geojson&steps=false&continue_straight=false`,
   );
 
   if (!response.ok) {
@@ -438,7 +416,7 @@ const progressBetweenAbstractPoints = (
   return Math.max(0, Math.min(1, t));
 };
 
-export function Map({ variant = 'console' }: { variant?: 'console' | 'embed' }) {
+export const Map: React.FC = () => {
   const {
     settings,
     localities,
@@ -542,24 +520,21 @@ export function Map({ variant = 'console' }: { variant?: 'console' | 'embed' }) 
   } = useOsrmRoutes(missionDescriptors);
   const routingFallbackActive = failedCorridorRouteIds.length > 0 || failedMissionRouteIds.length > 0;
 
-  const heightClassName =
-    variant === 'embed' ? 'h-[380px] sm:h-[420px] lg:h-[460px]' : 'h-[420px] sm:h-[520px] lg:h-[860px]';
-
   return (
-    <div className="map-shell relative overflow-hidden rounded-[24px] border border-white/10 lg:rounded-[32px]">
+    <div className="map-shell relative overflow-hidden rounded-[28px] border border-white/10 lg:rounded-[36px]">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.08),transparent_28%),radial-gradient(circle_at_top_right,rgba(56,189,248,0.14),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(251,146,60,0.12),transparent_28%)]" />
 
-      <div className={`relative ${heightClassName}`}>
+      <div className="relative h-[420px] sm:h-[520px] lg:h-[860px]">
         <MapContainer
           center={[center.lat, center.lng]}
           zoom={11.5}
-          scrollWheelZoom={variant !== 'embed'}
+          scrollWheelZoom
           className="h-full w-full"
         >
           <MapViewport center={center} />
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url={resolveTileUrlTemplate()}
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
 
           {routes.map((route) => {

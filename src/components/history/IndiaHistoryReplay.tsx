@@ -9,20 +9,6 @@ import { indiaHistoryReplayScenarios, type HistoryMarker, type IndiaHistoryRepla
 
 type LatLng = { lat: number; lng: number };
 
-const resolveTileUrlTemplate = () => {
-  const explicit = (import.meta.env.VITE_TILE_URL_TEMPLATE || '').trim();
-  if (explicit) return explicit;
-
-  const tileServerBase = (import.meta.env.VITE_LOCAL_TILESERVER_URL || '').trim();
-  if (tileServerBase) {
-    const base = tileServerBase.endsWith('/') ? tileServerBase.slice(0, -1) : tileServerBase;
-    const style = (import.meta.env.VITE_TILE_STYLE || 'basic').trim() || 'basic';
-    return `${base}/styles/${encodeURIComponent(style)}/{z}/{x}/{y}.png`;
-  }
-
-  return 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-};
-
 function clamp(value: number, min = 0, max = 100) {
   return Math.max(min, Math.min(max, value));
 }
@@ -157,8 +143,8 @@ export function IndiaHistoryReplay({
   const severityRadiusMeters = Math.max(15_000, Math.round(scenario.map.radiusKm * 1000 * (0.65 + phase.severity / 160)));
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#070b14_0%,#0d1423_42%,#0f1b30_100%)] text-white">
-      <header className="sticky top-0 z-50 border-b border-slate-500/30 bg-slate-950/70 backdrop-blur-2xl">
+    <div className="min-h-screen bg-[linear-gradient(180deg,#050b12_0%,#09131b_42%,#0e1820_100%)] text-white">
+      <header className="sticky top-0 z-50 border-b border-white/8 bg-slate-950/55 backdrop-blur-2xl">
         <div className="mx-auto flex max-w-[1480px] items-center justify-between gap-4 px-4 py-4 lg:px-8">
           <div className="flex items-center gap-3">
             <button
@@ -300,7 +286,7 @@ export function IndiaHistoryReplay({
               >
                 <TileLayer
                   attribution='&copy; OpenStreetMap contributors'
-                  url={resolveTileUrlTemplate()}
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
                 <MapController center={center} zoom={scenario.map.zoom} />
 
