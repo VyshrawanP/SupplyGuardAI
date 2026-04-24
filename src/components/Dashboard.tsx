@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import {
   Ambulance, Building2, MapPinned, RotateCcw,
   Play, Pause, FastForward, Map as MapIcon, Activity,
@@ -54,7 +54,7 @@ export const Dashboard = ({
 
   const phaseColor = clock.phase === 'Peak' ? '#ef4444' : clock.phase === 'Escalation' ? '#f59e0b' : clock.phase === 'Recovery' ? '#22c55e' : '#94a3b8';
 
-  const tabs: Array<{ id: Tab; label: string; icon: React.ReactNode }> = [
+  const tabs: Array<{ id: Tab; label: string; icon: ReactNode }> = [
     { id: 'map', label: 'Live Map', icon: <MapIcon className="h-4 w-4" /> },
     { id: 'response', label: 'Response', icon: <Activity className="h-4 w-4" /> },
     { id: 'apps', label: 'How It Works', icon: <Smartphone className="h-4 w-4" /> },

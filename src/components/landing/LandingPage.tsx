@@ -1,7 +1,17 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Play, Download, Github, ExternalLink, Activity, Shield, Wifi, WifiOff, Eye, Server, Cpu, Database, Radio, ChevronRight, Smartphone, Users, Building2, MapPin } from 'lucide-react';
 import '../../styles/landing.css';
+import '../../styles/sections.css';
+import '../../styles/sections-part2.css';
+import '../../styles/sections-part3.css';
 import logoSrc from '../../assets/logo.png';
+import { HeroDemoPreview } from './sections/HeroDemoPreview';
+import { CompetitorComparison } from './sections/CompetitorComparison';
+import { OfflineDeepDive } from './sections/OfflineDeepDive';
+import { PhoneMockups } from './sections/PhoneMockups';
+import { CycloneFaniValidation } from './sections/CycloneFaniValidation';
+import { BeforeAfterComparison } from './sections/BeforeAfterComparison';
+import { HospitalTechExplainer } from './sections/HospitalTechExplainer';
 
 /* ── Scroll reveal hook ── */
 function useReveal() {
@@ -19,7 +29,7 @@ function useReveal() {
   return ref;
 }
 
-function Reveal({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+function Reveal({ children, className = '' }: { children: ReactNode; className?: string; key?: import('react').Key }) {
   const ref = useReveal();
   return <div ref={ref} className={`reveal ${className}`}>{children}</div>;
 }
@@ -66,9 +76,11 @@ export function LandingPage({
           </div>
           <div className="hidden items-center gap-6 sm:flex">
             <a href="#problem" className="landing-link text-sm">Problem</a>
+            <a href="#comparison" className="landing-link text-sm">vs Others</a>
             <a href="#hospitals" className="landing-link text-sm">Hospitals</a>
             <a href="#validation" className="landing-link text-sm">Validation</a>
             <a href="#apps" className="landing-link text-sm">Apps</a>
+            <a href="#offline" className="landing-link text-sm">Offline</a>
             <a href="https://github.com/VyshrawanP/SupplyGuardAI" target="_blank" rel="noopener" className="landing-link text-sm flex items-center gap-1">
               <Github size={14} /> GitHub
             </a>
@@ -79,27 +91,37 @@ export function LandingPage({
       {/* ═══════════ HERO ═══════════ */}
       <section className="hero-section">
         <div className="mx-auto max-w-6xl px-6 py-16 lg:py-24">
-          <p className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: 'var(--accent)' }}>
-            Disaster Logistics · Hospital Capacity · Validated on Katrina
-          </p>
+          <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
+            {/* Left: Text */}
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: 'var(--accent)' }}>
+                Disaster Logistics · Hospital Capacity · Validated on Katrina
+              </p>
 
-          <h1 className="landing-title mt-5 max-w-3xl text-4xl font-extrabold leading-[1.1] tracking-tight lg:text-5xl">
-            Ambulances shouldn't circle between full hospitals while people die waiting
-          </h1>
+              <h1 className="landing-title mt-5 max-w-3xl text-4xl font-extrabold leading-[1.1] tracking-tight lg:text-5xl">
+                Ambulances shouldn't circle between full hospitals while people die waiting
+              </h1>
 
-          <p className="landing-subtitle mt-6 max-w-2xl text-lg leading-relaxed">
-            SupplyGuard AI is the only disaster coordination platform that tracks real-time hospital bed availability. Validated on Hurricane Katrina data — we detect resource shortages <strong className="text-white">58 hours faster</strong> than FEMA did.
-          </p>
+              <p className="landing-subtitle mt-6 max-w-2xl text-lg leading-relaxed">
+                SupplyGuard AI is the only disaster coordination platform that tracks real-time hospital bed availability. Validated on Hurricane Katrina data — we detect resource shortages <strong className="text-white">58 hours faster</strong> than FEMA did.
+              </p>
 
-          <div className="mt-8 flex flex-wrap gap-4">
-            <button onClick={onOpenSimulation} className="btn-primary" id="hero-cta-simulation">
-              <Play size={16} />
-              Open Live Simulation
-            </button>
-            <button onClick={onOpenProject} className="btn-secondary" id="hero-cta-docs">
-              <ExternalLink size={16} />
-              Project Documentation
-            </button>
+              <div className="mt-8 flex flex-wrap gap-4">
+                <button onClick={onOpenSimulation} className="btn-primary" id="hero-cta-simulation">
+                  <Play size={16} />
+                  Open Live Simulation
+                </button>
+                <button onClick={onOpenProject} className="btn-secondary" id="hero-cta-docs">
+                  <ExternalLink size={16} />
+                  Project Documentation
+                </button>
+              </div>
+            </div>
+
+            {/* Right: Live demo preview */}
+            <div className="hidden lg:block">
+              <HeroDemoPreview onOpenSimulation={onOpenSimulation} />
+            </div>
           </div>
 
           {/* ── Proof metrics strip ── */}
@@ -119,6 +141,11 @@ export function LandingPage({
               <div className="metric-strip__label">Fewer hospital overflows</div>
               <div className="metric-strip__source">Real-time bed routing</div>
             </div>
+          </div>
+
+          {/* Mobile: Demo below hero text */}
+          <div className="mt-8 lg:hidden">
+            <HeroDemoPreview onOpenSimulation={onOpenSimulation} />
           </div>
         </div>
       </section>
@@ -183,6 +210,9 @@ export function LandingPage({
           </Reveal>
         </div>
       </section>
+
+      {/* ═══════════ COMPETITOR COMPARISON ═══════════ */}
+      <CompetitorComparison />
 
       {/* ═══════════ HOSPITAL CAPACITY — THE DIFFERENTIATOR ═══════════ */}
       <section id="hospitals" className="hospital-section">
@@ -258,7 +288,13 @@ export function LandingPage({
         </div>
       </section>
 
-      {/* ═══════════ BEFORE / AFTER COMPARISON ═══════════ */}
+      {/* ═══════════ HOSPITAL TECH EXPLAINER ═══════════ */}
+      <HospitalTechExplainer />
+
+      {/* ═══════════ BEFORE / AFTER ANIMATED COMPARISON ═══════════ */}
+      <BeforeAfterComparison />
+
+      {/* ═══════════ MEASURED IMPACT (Katrina) ═══════════ */}
       <section id="validation" className="comparison-section">
         <div className="mx-auto max-w-5xl px-6 py-16 lg:py-24">
           <Reveal>
@@ -310,6 +346,9 @@ export function LandingPage({
           </Reveal>
         </div>
       </section>
+
+      {/* ═══════════ CYCLONE FANI VALIDATION ═══════════ */}
+      <CycloneFaniValidation />
 
       {/* ═══════════ WHY WE'RE DIFFERENT ═══════════ */}
       <section className="differentiators-section">
@@ -423,43 +462,11 @@ export function LandingPage({
               3 Apps for 3 Roles
             </h2>
             <p className="landing-subtitle mt-4 max-w-2xl text-base">
-              Each app is purpose-built for its user: coordinators, field responders, and affected civilians.
+              Each app is purpose-built for its user: coordinators, field responders, and affected civilians. Every app works offline.
             </p>
           </Reveal>
 
-          <Reveal className="mt-10">
-            <div className="grid gap-6 md:grid-cols-3">
-              <div className="app-card">
-                <div className="app-card__icon app-card__icon--command"><Cpu size={20} /></div>
-                <div className="app-card__title">Command Center</div>
-                <div className="app-card__desc">Full disaster dashboard for operations coordinators. Real-time map, hospital tracking, fleet management.</div>
-                <div className="app-card__meta">Android · APK</div>
-                <button onClick={onOpenDownloads} className="app-card__download">
-                  <Download size={14} /> Download APK
-                </button>
-              </div>
-
-              <div className="app-card">
-                <div className="app-card__icon app-card__icon--rescue"><Radio size={20} /></div>
-                <div className="app-card__title">Rescue Team</div>
-                <div className="app-card__desc">Field app for responders. Mission assignments, navigation to available hospitals, offline operation.</div>
-                <div className="app-card__meta">Android · APK</div>
-                <button onClick={onOpenDownloads} className="app-card__download">
-                  <Download size={14} /> Download APK
-                </button>
-              </div>
-
-              <div className="app-card">
-                <div className="app-card__icon app-card__icon--victim"><Users size={20} /></div>
-                <div className="app-card__title">Victim Report</div>
-                <div className="app-card__desc">Civilian app for reporting needs and receiving alerts. Works on mesh network when infrastructure fails.</div>
-                <div className="app-card__meta">Android · APK</div>
-                <button onClick={onOpenDownloads} className="app-card__download">
-                  <Download size={14} /> Download APK
-                </button>
-              </div>
-            </div>
-          </Reveal>
+          <PhoneMockups onOpenDownloads={onOpenDownloads} />
 
           <Reveal className="mt-10">
             <div className="flex flex-wrap gap-4 justify-center">
@@ -476,6 +483,9 @@ export function LandingPage({
           </Reveal>
         </div>
       </section>
+
+      {/* ═══════════ OFFLINE DEEP DIVE ═══════════ */}
+      <OfflineDeepDive />
 
       {/* ═══════════ FOOTER ═══════════ */}
       <footer className="landing-footer border-t py-8">
