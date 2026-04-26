@@ -74,11 +74,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden; /* Ensure PNGs are clipped if they have rounded corners */
 }
 
-.phone-mockup__icon--command { background: var(--accent-dim); color: var(--accent); }
-.phone-mockup__icon--rescue { background: var(--success-dim); color: var(--success); }
-.phone-mockup__icon--victim { background: var(--warning-dim); color: var(--warning); }
+.phone-mockup__app-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.phone-mockup__icon--command { background: none; }
+.phone-mockup__icon--rescue { background: none; }
+.phone-mockup__icon--victim { background: none; }
 
 .phone-mockup__name {
   font-size: 15px;

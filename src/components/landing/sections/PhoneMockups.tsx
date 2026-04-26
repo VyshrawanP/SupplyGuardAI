@@ -1,8 +1,12 @@
-import { Cpu, Radio, Users, Download } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import rescueImg from '../../../assets/screenshot-rescue.png';
 import victimImg from '../../../assets/screenshot-victim.png';
 import commandImg from '../../../assets/screenshot-command.png';
+
+import commandIcon from '../../../assets/command_center_app.png';
+import rescueIcon from '../../../assets/rescue_app.png';
+import victimIcon from '../../../assets/victim_app.png';
 
 import { Reveal } from './Reveal';
 
@@ -10,7 +14,7 @@ const APPS = [
   {
     name: 'Command Center',
     role: 'Operations coordinators',
-    icon: <Cpu size={20}/>,
+    icon: <img src={commandIcon} alt="Command Center Icon" className="phone-mockup__app-icon" />,
     iconClass: 'phone-mockup__icon--command',
     img: commandImg,
     features: ['Real-time map + hospital tracking', 'Fleet management dashboard', 'Broadcast alerts to all teams'],
@@ -20,7 +24,7 @@ const APPS = [
   {
     name: 'Rescue Team',
     role: 'Field responders',
-    icon: <Radio size={20}/>,
+    icon: <img src={rescueIcon} alt="Rescue Team Icon" className="phone-mockup__app-icon" />,
     iconClass: 'phone-mockup__icon--rescue',
     img: rescueImg,
     features: ['Mission assignments + navigation', 'Hospital bed availability', 'Offline maps + CRDT sync'],
@@ -30,7 +34,7 @@ const APPS = [
   {
     name: 'Victim Report',
     role: 'Affected civilians',
-    icon: <Users size={20}/>,
+    icon: <img src={victimIcon} alt="Victim Report Icon" className="phone-mockup__app-icon" />,
     iconClass: 'phone-mockup__icon--victim',
     img: victimImg,
     features: ['SOS emergency button', 'Needs selector (medical, water, food)', 'Works offline via mesh network'],
