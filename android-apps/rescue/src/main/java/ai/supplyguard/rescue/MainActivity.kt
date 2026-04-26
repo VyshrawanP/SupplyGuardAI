@@ -151,6 +151,7 @@ private fun RescueAppRoot() {
         activeConnectionCount = activeConnectionCount,
         commands = state.commands,
         sos = state.sos,
+        responses = state.responses,
         onSendResponse = vm::sendResponse,
         onSendLocationBroadcast = vm::sendLocationBroadcast,
         onSosClick = { item -> selectedSosItem = item }
@@ -166,6 +167,7 @@ private fun RescueScreen(
   activeConnectionCount: Int,
   commands: List<CommandPayload>,
   sos: List<SosItem>,
+  responses: List<ai.supplyguard.data.ResponsePayload>,
   onSendResponse: (String, String, Double?, Double?, Float?) -> Unit,
   onSendLocationBroadcast: (String, Double, Double, Float?) -> Unit,
   onSosClick: (SosItem) -> Unit,
@@ -588,6 +590,30 @@ private fun RescueScreen(
         }
       }
 
+      // Team Communication
+      item {
+        Row(
+          modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+          Text("Team Communication", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+          if (responses.isNotEmpty()) {
+            Badge(containerColor = MaterialTheme.colorScheme.secondary) {
+              Text("${responses.size}", color = MaterialTheme.colorScheme.onSecondary)
+            }
+          }
+        }
+      }
+
+      if (responses.isEmpty()) {
+        item { Text("No team messages yet.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+      } else {
+        items(responses) { resp ->
+          ResponseCard(resp)
+        }
+      }
+
       item { Spacer(Modifier.height(16.dp)) }
     }
   }
@@ -621,6 +647,40 @@ private fun CommandCard(payload: CommandPayload) {
         }
       }
       Text(payload.priority.name, style = MaterialTheme.typography.labelSmall, color = contentColor.copy(alpha = 0.7f))
+    }
+  }
+}
+
+@Composable
+private fun ResponseCard(payload: ai.supplyguard.data.ResponsePayload) {
+  Card(
+    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+    modifier = Modifier.fillMaxWidth()
+  ) {
+    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+      Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Icon(
+          Icons.Default.LocationOn,
+          contentDescription = null,
+          tint = MaterialTheme.colorScheme.onSecondaryContainer,
+          modifier = Modifier.size(16.dp)
+        )
+        Text(
+          "Team Message",
+          style = MaterialTheme.typography.titleSmall,
+          color = MaterialTheme.colorScheme.onSecondaryContainer,
+          fontWeight = FontWeight.SemiBold
+        )
+      }
+      Text(payload.message, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSecondaryContainer)
+      if (payload.latitude != null && payload.longitude != null) {
+        val accuracy = payload.accuracyMeters?.let { " (±${String.format("%.0f", it)}m)" } ?: ""
+        Text(
+          "From Lat: ${String.format("%.6f", payload.latitude)}, Lon: ${String.format("%.6f", payload.longitude)}$accuracy",
+          style = MaterialTheme.typography.labelSmall,
+          color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f),
+        )
+      }
     }
   }
 }

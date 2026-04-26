@@ -50,11 +50,13 @@ class BackendSyncWorker(
         dao.setSyncState(batch.map { it.id }, MessageSyncState.SYNCED)
       }
 
-      // Pull COMMAND messages created by other sources (e.g. web command center).
-      val pulled = api.getMessages(type = "COMMAND", sinceEpochMs = lastPullEpochMs, limit = 200)
-      if (pulled.isNotEmpty()) {
-        val now = System.currentTimeMillis()
-        var maxTs = lastPullEpochMs
+      // Pull messages created by other sources.
+      val typesToPull = listOf("COMMAND", "SOS", "RESPONSE")
+      var maxTs = lastPullEpochMs
+      val now = System.currentTimeMillis()
+
+      for (type in typesToPull) {
+        val pulled = api.getMessages(type = type, sinceEpochMs = lastPullEpochMs, limit = 100)
         for (msg in pulled) {
           maxTs = maxOf(maxTs, msg.timestampEpochMs)
           val inserted = dao.insertIgnore(
@@ -72,14 +74,14 @@ class BackendSyncWorker(
               syncState = MessageSyncState.SYNCED,
             ),
           )
-          if (inserted != -1L && inserted != 0L) {
+          if (inserted != -1L && inserted != 0L && msg.type == "COMMAND") {
             runCatching { json.decodeFromString(CommandPayload.serializer(), msg.payload) }
               .getOrNull()
               ?.let { CommandNotifications.notifyCommand(applicationContext, msg.id, it) }
           }
         }
-        prefs.edit().putLong("last_pull_epoch_ms", maxTs).apply()
       }
+      prefs.edit().putLong("last_pull_epoch_ms", maxTs).apply()
 
       Result.success()
     } catch (_: Throwable) {

@@ -109,8 +109,22 @@ val mockHospitals = listOf(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DashboardTab() {
+fun DashboardTab(
+  sos: List<Pair<ai.supplyguard.data.MeshEnvelope, ai.supplyguard.data.SosPayload?>> = emptyList()
+) {
   val context = LocalContext.current
+  
+  // Convert SOS payloads to Map markers
+  val sosMarkers = remember(sos) {
+    sos.mapNotNull { (env, payload) ->
+      if (payload?.latitude != null && payload.longitude != null) {
+        val title = payload.name?.takeIf { it.isNotBlank() } ?: "SOS (${env.originDeviceId.takeLast(4)})"
+        val snippet = payload.need?.takeIf { it.isNotBlank() } ?: "Emergency Alert"
+        Triple(GeoPoint(payload.latitude, payload.longitude), title, snippet)
+      } else null
+    }
+  }
+
   LaunchedEffect(Unit) {
     Configuration.getInstance().load(context, PreferenceManager.getDefaultSharedPreferences(context))
   }
@@ -128,7 +142,7 @@ fun DashboardTab() {
     sheetContentColor = Color.White,
     sheetDragHandle = { BottomSheetDefaults.DragHandle(color = Color.Gray) },
     sheetContent = {
-      DashboardBottomSheetContent()
+      DashboardBottomSheetContent(sos)
     }
   ) { padding ->
     Box(modifier = Modifier.fillMaxSize().padding(padding)) {
@@ -142,12 +156,22 @@ fun DashboardTab() {
             val centerPoint = GeoPoint(12.9716, 77.5946) // Bangalore
             mapController.setCenter(centerPoint)
             
-            // Add custom markers
+            // Add custom markers (hospitals)
             mockHospitals.forEach { hospital ->
               val marker = Marker(this)
               marker.position = hospital.location
               marker.title = hospital.name
-              // Use default marker icon but could be customized
+              overlays.add(marker)
+            }
+
+            // Add real SOS markers
+            sosMarkers.forEach { (point, title, snippet) ->
+              val marker = Marker(this)
+              marker.position = point
+              marker.title = title
+              marker.snippet = snippet
+              marker.icon = context.getDrawable(android.R.drawable.ic_delete) // Quick red icon
+              marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
               overlays.add(marker)
             }
             
@@ -174,7 +198,9 @@ fun DashboardTab() {
 }
 
 @Composable
-private fun DashboardBottomSheetContent() {
+private fun DashboardBottomSheetContent(
+  sos: List<Pair<ai.supplyguard.data.MeshEnvelope, ai.supplyguard.data.SosPayload?>>
+) {
   Column(
     modifier = Modifier
       .fillMaxWidth()
@@ -187,13 +213,22 @@ private fun DashboardBottomSheetContent() {
       modifier = Modifier.fillMaxWidth(),
       horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-      // Critical Alerts
+      // Critical Alerts (Real SOS)
       Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Critical Alerts (2 Active)", style = MaterialTheme.typography.titleSmall, color = Color.LightGray)
-        mockAlerts.forEach { alert ->
-          Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Icon(Icons.Outlined.WarningAmber, contentDescription = null, tint = Color(0xFFFF5722), modifier = Modifier.size(16.dp))
-            Text("${alert.title}: ${alert.description}", style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text("Active SOS Alerts (${sos.size})", style = MaterialTheme.typography.titleSmall, color = Color.LightGray)
+        if (sos.isEmpty()) {
+          Text("No active SOS alerts", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+        } else {
+          sos.take(3).forEach { (env, payload) ->
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+              Icon(Icons.Outlined.WarningAmber, contentDescription = null, tint = Color(0xFFF44336), modifier = Modifier.size(16.dp))
+              Text(
+                "${payload?.name ?: "Unknown"}: ${payload?.need ?: "Emergency"}",
+                style = MaterialTheme.typography.bodySmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+              )
+            }
           }
         }
       }

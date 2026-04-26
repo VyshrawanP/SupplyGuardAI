@@ -219,10 +219,10 @@ private fun CommandCenterScreen(
       }
 
       when (selectedTab) {
-        CcTab.DASHBOARD -> DashboardTab()
+        CcTab.DASHBOARD -> DashboardTab(sos)
         CcTab.SEND -> SendTab(hasPermissions, onSendToVictim, onSendToRescue, onBroadcast)
         CcTab.SOS  -> SosTab(sos, hasPermissions, onForwardSosLocationToRescue)
-        CcTab.LOG  -> LogTab(commands, responses)
+        CcTab.LOG  -> LogTab(commands, responses, sos)
       }
     }
   }
@@ -373,18 +373,39 @@ private fun SosTab(
 // ── Log Tab ──────────────────────────────────────────────────────────────────
 
 @Composable
-private fun LogTab(commands: List<CommandPayload>, responses: List<ResponsePayload?>) {
+private fun LogTab(
+  commands: List<CommandPayload>,
+  responses: List<ResponsePayload?>,
+  sos: List<Pair<ai.supplyguard.data.MeshEnvelope, SosPayload?>>,
+) {
   LazyColumn(
     modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
     verticalArrangement = Arrangement.spacedBy(10.dp),
   ) {
     item { Spacer(Modifier.height(4.dp)) }
+    
+    // Incoming SOS
+    item {
+      Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text("Incoming SOS Alerts", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        if (sos.isNotEmpty()) Badge(containerColor = MaterialTheme.colorScheme.error) { Text("${sos.size}") }
+      }
+    }
+    if (sos.isEmpty()) {
+      item { Text("No SOS alerts yet.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+    } else {
+      items(sos) { (envelope, payload) ->
+        SosCard(envelope = envelope, payload = payload, hasPermissions = true, onForwardToRescue = {})
+      }
+    }
+
     item {
       Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         Text("Sent / Received Commands", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         if (commands.isNotEmpty()) Badge(containerColor = MaterialTheme.colorScheme.primary) { Text("${commands.size}") }
       }
     }
+
     if (commands.isEmpty()) {
       item { Text("No command messages yet.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
     } else {

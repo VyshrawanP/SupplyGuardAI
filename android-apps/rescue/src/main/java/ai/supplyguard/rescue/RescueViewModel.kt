@@ -22,6 +22,7 @@ data class SosItem(
 data class RescueUiState(
   val commands: List<CommandPayload> = emptyList(),
   val sos: List<SosItem> = emptyList(),
+  val responses: List<ai.supplyguard.data.ResponsePayload> = emptyList(),
 )
 
 class RescueViewModel(
@@ -32,7 +33,8 @@ class RescueViewModel(
   val state: StateFlow<RescueUiState> = combine(
     repository.watchCommands(),
     repository.watchSos(),
-  ) { commandEnvs, sosEnvs ->
+    repository.watchResponses(),
+  ) { commandEnvs, sosEnvs, respEnvs ->
     RescueUiState(
       commands = commandEnvs
         .sortedByDescending { it.timestampEpochMs }
@@ -41,6 +43,9 @@ class RescueViewModel(
       sos = sosEnvs
         .sortedByDescending { it.timestampEpochMs }
         .map { env -> SosItem(envelope = env, payload = env.toSosPayloadOrNull()) },
+      responses = respEnvs
+        .sortedByDescending { it.timestampEpochMs }
+        .mapNotNull { env -> env.toResponsePayloadOrNull() },
     )
   }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), RescueUiState())
 
@@ -96,6 +101,14 @@ class RescueViewModel(
   private fun MeshEnvelope.toSosPayloadOrNull(): SosPayload? {
     return try {
       json.decodeFromString(SosPayload.serializer(), payload)
+    } catch (_: Throwable) {
+      null
+    }
+  }
+
+  private fun MeshEnvelope.toResponsePayloadOrNull(): ai.supplyguard.data.ResponsePayload? {
+    return try {
+      json.decodeFromString(ai.supplyguard.data.ResponsePayload.serializer(), payload)
     } catch (_: Throwable) {
       null
     }

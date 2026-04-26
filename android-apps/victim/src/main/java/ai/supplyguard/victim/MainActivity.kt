@@ -146,6 +146,7 @@ private fun VictimAppRoot() {
         onBack = { isReportingVictim = false },
         activeConnectionCount = activeConnectionCount,
         hasMeshPermissions = hasMeshPermissions,
+        responses = state.responses,
         onSendVictimReport = { need, lat, lon, acc ->
           vm.sendSos(null, null, need, lat, lon, acc)
           isReportingVictim = false
@@ -156,6 +157,7 @@ private fun VictimAppRoot() {
         hasMeshPermissions = hasMeshPermissions,
         activeConnectionCount = activeConnectionCount,
         commands = state.commands,
+        responses = state.responses,
         onSendSos = vm::sendSos,
         onReportVictim = { isReportingVictim = true }
       )
@@ -169,6 +171,7 @@ private fun VictimScreen(
   hasMeshPermissions: Boolean,
   activeConnectionCount: Int,
   commands: List<CommandPayload>,
+  responses: List<ai.supplyguard.data.ResponsePayload>,
   onSendSos: (String?, String?, String?, Double?, Double?, Float?) -> Unit,
   onReportVictim: () -> Unit,
 ) {
@@ -531,6 +534,36 @@ private fun VictimScreen(
         }
       }
 
+      // Rescue Responses
+      item {
+        Row(
+          modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+          Text("Rescue Team Messages", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+          if (responses.isNotEmpty()) {
+            Badge(containerColor = MaterialTheme.colorScheme.secondary) {
+              Text("${responses.size}", color = MaterialTheme.colorScheme.onSecondary)
+            }
+          }
+        }
+      }
+
+      if (responses.isEmpty()) {
+        item {
+          Text(
+            "No messages from rescue teams yet.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+        }
+      } else {
+        items(responses) { resp ->
+          ResponseCard(resp)
+        }
+      }
+
       item { Spacer(Modifier.height(16.dp)) }
     }
   }
@@ -569,6 +602,40 @@ private fun CommandCard(payload: CommandPayload) {
         style = MaterialTheme.typography.labelSmall,
         color = contentColor.copy(alpha = 0.7f),
       )
+    }
+  }
+}
+
+@Composable
+private fun ResponseCard(payload: ai.supplyguard.data.ResponsePayload) {
+  Card(
+    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+    modifier = Modifier.fillMaxWidth()
+  ) {
+    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+      Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Icon(
+          Icons.Default.LocationOn,
+          contentDescription = null,
+          tint = MaterialTheme.colorScheme.onSecondaryContainer,
+          modifier = Modifier.size(16.dp)
+        )
+        Text(
+          "Rescue Response",
+          style = MaterialTheme.typography.titleSmall,
+          color = MaterialTheme.colorScheme.onSecondaryContainer,
+          fontWeight = FontWeight.SemiBold
+        )
+      }
+      Text(payload.message, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSecondaryContainer)
+      if (payload.latitude != null && payload.longitude != null) {
+        val accuracy = payload.accuracyMeters?.let { " (±${String.format("%.0f", it)}m)" } ?: ""
+        Text(
+          "From Lat: ${String.format("%.6f", payload.latitude)}, Lon: ${String.format("%.6f", payload.longitude)}$accuracy",
+          style = MaterialTheme.typography.labelSmall,
+          color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f),
+        )
+      }
     }
   }
 }

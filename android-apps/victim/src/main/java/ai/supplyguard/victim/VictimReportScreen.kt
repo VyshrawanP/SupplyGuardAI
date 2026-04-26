@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -39,6 +40,7 @@ fun VictimReportScreen(
   onBack: () -> Unit,
   activeConnectionCount: Int,
   hasMeshPermissions: Boolean,
+  responses: List<ai.supplyguard.data.ResponsePayload> = emptyList(),
   onSendVictimReport: (String?, Double?, Double?, Float?) -> Unit,
 ) {
   val context = LocalContext.current
@@ -227,6 +229,39 @@ fun VictimReportScreen(
       }
 
       Spacer(Modifier.weight(1f))
+
+      // Rescue Team Messages
+      if (responses.isNotEmpty()) {
+        Column(
+          modifier = Modifier.fillMaxWidth(),
+          verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+          Text(
+            "MESSAGES FROM RESCUE TEAMS",
+            color = Color(0xFF4CAF50),
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 1.sp
+          )
+          responses.take(3).forEach { resp ->
+            Card(
+              colors = CardDefaults.cardColors(containerColor = Color(0xFF2E3D4D).copy(alpha = 0.5f)),
+              shape = RoundedCornerShape(8.dp),
+              modifier = Modifier.fillMaxWidth()
+            ) {
+              Row(
+                modifier = Modifier.padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+              ) {
+                Icon(Icons.Default.Chat, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(resp.message, color = Color.White, fontSize = 14.sp)
+              }
+            }
+          }
+        }
+        Spacer(Modifier.height(24.dp))
+      }
 
       // Location Card
       Box(
