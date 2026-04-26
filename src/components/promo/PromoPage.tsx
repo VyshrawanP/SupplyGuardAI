@@ -1,5 +1,8 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { BookOpen, Download, ExternalLink, LayoutDashboard, Play, ShieldCheck, Signal, Sparkles, Users, Wifi } from 'lucide-react';
+import commandIcon from '../../assets/command_center_app.png';
+import rescueIcon from '../../assets/rescue_app.png';
+import victimIcon from '../../assets/victim_app.png';
 
 function FeatureCard({
   title,
@@ -273,7 +276,7 @@ export function PromoPage({
 
           <div className="mt-6 grid gap-4 lg:grid-cols-2">
             <AppPromoCard
-              iconSrc="/downloads/apk/command-center/icon"
+              iconSrc={commandIcon}
               name="SupplyGuard Command"
               subtitle="Command Center (Android • v1.0)"
               bestFor="Coordinators managing missions, routes, and overall response."
@@ -282,10 +285,10 @@ export function PromoPage({
                 'Coordinate across rescue, medical, and supply workflows',
                 'Works even when connectivity degrades (local pairing)',
               ]}
-              downloadHref="/downloads/apk/command-center"
+              downloadHref="https://buzzheavier.com/n44uhbbmx46p"
             />
             <AppPromoCard
-              iconSrc="/downloads/apk/rescue/icon"
+              iconSrc={rescueIcon}
               name="SupplyGuard Rescue"
               subtitle="Responder app (Android • v1.0)"
               bestFor="Field responders executing assignments and relaying updates."
@@ -294,10 +297,10 @@ export function PromoPage({
                 'Send status updates during low-connectivity scenarios',
                 'Mesh + LAN relay friendly',
               ]}
-              downloadHref="/downloads/apk/rescue"
+              downloadHref="https://buzzheavier.com/hstphob0srhy"
             />
             <AppPromoCard
-              iconSrc="/downloads/apk/victim/icon"
+              iconSrc={victimIcon}
               name="SupplyGuard Victim"
               subtitle="Citizen app (Android • v1.0)"
               bestFor="People requesting help and receiving local guidance."
@@ -306,7 +309,7 @@ export function PromoPage({
                 'Receive local alerts and instructions',
                 'Designed for simple, fast interaction',
               ]}
-              downloadHref="/downloads/apk/victim"
+              downloadHref="https://buzzheavier.com/qc6y5k7oe5pp"
             />
             <AppPromoCard
               name="SupplyGuard Web Console"

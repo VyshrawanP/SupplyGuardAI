@@ -9,6 +9,10 @@ import JUDGE_QUICKSTART from '../../../docs/JUDGE_QUICKSTART.md?raw';
 import PRIVACY_SECURITY from '../../../docs/PRIVACY_SECURITY.md?raw';
 import RESPONSIBLE_AI from '../../../docs/RESPONSIBLE_AI.md?raw';
 
+import commandIcon from '../../assets/command_center_app.png';
+import rescueIcon from '../../assets/rescue_app.png';
+import victimIcon from '../../assets/victim_app.png';
+
 type DocPage = {
   id: string;
   title: string;
@@ -115,7 +119,7 @@ SupplyGuard AI ships three companion Android apps that work together to create a
 - Message deduplication via UUID to prevent relay loops
 
 ### Download
-[Download Victim App APK](/downloads/apk/victim)
+[Download Victim App APK](https://buzzheavier.com/qc6y5k7oe5pp)
 
 ---
 
@@ -136,7 +140,7 @@ SupplyGuard AI ships three companion Android apps that work together to create a
 - Firebase sync with conflict resolution on reconnect
 
 ### Download
-[Download Rescue App APK](/downloads/apk/rescue)
+[Download Rescue App APK](https://buzzheavier.com/hstphob0srhy)
 
 ---
 
@@ -157,7 +161,7 @@ SupplyGuard AI ships three companion Android apps that work together to create a
 - WebSocket mesh signaling for peer-to-peer communication
 
 ### Download
-[Download Command Center APK](/downloads/apk/command-center)
+[Download Command Center APK](https://buzzheavier.com/n44uhbbmx46p)
 
 ---
 
@@ -383,10 +387,10 @@ export function ProjectPortal({
             </div>
 
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              <a href="/downloads/apk/command-center" className="panel-surface rounded-[18px] p-4 transition hover:bg-white/6">
+              <a href="https://buzzheavier.com/n44uhbbmx46p" target="_blank" rel="noopener" className="panel-surface rounded-[18px] p-4 transition hover:bg-white/6">
                 <div className="flex items-center gap-3">
                   <img
-                    src="/downloads/apk/command-center/icon"
+                    src={commandIcon}
                     alt="Command Center app icon"
                     className="h-10 w-10 rounded-[12px] border border-white/10 bg-white/5 object-cover"
                     loading="lazy"
@@ -397,10 +401,10 @@ export function ProjectPortal({
                   </div>
                 </div>
               </a>
-              <a href="/downloads/apk/rescue" className="panel-surface rounded-[18px] p-4 transition hover:bg-white/6">
+              <a href="https://buzzheavier.com/hstphob0srhy" target="_blank" rel="noopener" className="panel-surface rounded-[18px] p-4 transition hover:bg-white/6">
                 <div className="flex items-center gap-3">
                   <img
-                    src="/downloads/apk/rescue/icon"
+                    src={rescueIcon}
                     alt="Rescue app icon"
                     className="h-10 w-10 rounded-[12px] border border-white/10 bg-white/5 object-cover"
                     loading="lazy"
@@ -411,10 +415,10 @@ export function ProjectPortal({
                   </div>
                 </div>
               </a>
-              <a href="/downloads/apk/victim" className="panel-surface rounded-[18px] p-4 transition hover:bg-white/6">
+              <a href="https://buzzheavier.com/qc6y5k7oe5pp" target="_blank" rel="noopener" className="panel-surface rounded-[18px] p-4 transition hover:bg-white/6">
                 <div className="flex items-center gap-3">
                   <img
-                    src="/downloads/apk/victim/icon"
+                    src={victimIcon}
                     alt="Victim app icon"
                     className="h-10 w-10 rounded-[12px] border border-white/10 bg-white/5 object-cover"
                     loading="lazy"
@@ -507,21 +511,24 @@ export function ProjectPortal({
               </div>
               <div className="grid gap-3 sm:grid-cols-3">
                 <a
-                  href="/downloads/apk/command-center"
+                  href="https://buzzheavier.com/n44uhbbmx46p"
+                  target="_blank" rel="noopener"
                   className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-left text-sm text-slate-200 transition hover:bg-white/5"
                 >
                   <p className="font-semibold text-white">Command Center APK</p>
                   <p className="mt-1 text-xs text-slate-400">Coordinator console</p>
                 </a>
                 <a
-                  href="/downloads/apk/rescue"
+                  href="https://buzzheavier.com/hstphob0srhy"
+                  target="_blank" rel="noopener"
                   className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-left text-sm text-slate-200 transition hover:bg-white/5"
                 >
                   <p className="font-semibold text-white">Rescue APK</p>
                   <p className="mt-1 text-xs text-slate-400">Responder workflows</p>
                 </a>
                 <a
-                  href="/downloads/apk/victim"
+                  href="https://buzzheavier.com/qc6y5k7oe5pp"
+                  target="_blank" rel="noopener"
                   className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-left text-sm text-slate-200 transition hover:bg-white/5"
                 >
                   <p className="font-semibold text-white">Victim APK</p>
