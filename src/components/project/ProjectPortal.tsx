@@ -119,7 +119,7 @@ SupplyGuard AI ships three companion Android apps that work together to create a
 - Message deduplication via UUID to prevent relay loops
 
 ### Download
-[Download Victim App APK](https://buzzheavier.com/qc6y5k7oe5pp)
+[Download Victim App APK](https://www.mediafire.com/file/52gwl19r5w7dljr/victim-debug.apk/file)
 
 ---
 
@@ -140,7 +140,7 @@ SupplyGuard AI ships three companion Android apps that work together to create a
 - Firebase sync with conflict resolution on reconnect
 
 ### Download
-[Download Rescue App APK](https://buzzheavier.com/hstphob0srhy)
+[Download Rescue App APK](https://www.mediafire.com/file/0r0x790cpqlk2hu/rescue-debug.apk/file)
 
 ---
 
@@ -161,7 +161,7 @@ SupplyGuard AI ships three companion Android apps that work together to create a
 - WebSocket mesh signaling for peer-to-peer communication
 
 ### Download
-[Download Command Center APK](https://buzzheavier.com/n44uhbbmx46p)
+[Download Command Center APK](https://www.mediafire.com/file/6mmxsw86jvhb7xb/command-center-debug.apk/file)
 
 ---
 
@@ -387,7 +387,7 @@ export function ProjectPortal({
             </div>
 
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              <a href="https://buzzheavier.com/n44uhbbmx46p" target="_blank" rel="noopener" className="panel-surface rounded-[18px] p-4 transition hover:bg-white/6">
+              <a href="https://www.mediafire.com/file/6mmxsw86jvhb7xb/command-center-debug.apk/file" target="_blank" rel="noopener" className="panel-surface rounded-[18px] p-4 transition hover:bg-white/6">
                 <div className="flex items-center gap-3">
                   <img
                     src={commandIcon}
@@ -401,7 +401,7 @@ export function ProjectPortal({
                   </div>
                 </div>
               </a>
-              <a href="https://buzzheavier.com/hstphob0srhy" target="_blank" rel="noopener" className="panel-surface rounded-[18px] p-4 transition hover:bg-white/6">
+              <a href="https://www.mediafire.com/file/0r0x790cpqlk2hu/rescue-debug.apk/file" target="_blank" rel="noopener" className="panel-surface rounded-[18px] p-4 transition hover:bg-white/6">
                 <div className="flex items-center gap-3">
                   <img
                     src={rescueIcon}
@@ -415,7 +415,7 @@ export function ProjectPortal({
                   </div>
                 </div>
               </a>
-              <a href="https://buzzheavier.com/qc6y5k7oe5pp" target="_blank" rel="noopener" className="panel-surface rounded-[18px] p-4 transition hover:bg-white/6">
+              <a href="https://www.mediafire.com/file/52gwl19r5w7dljr/victim-debug.apk/file" target="_blank" rel="noopener" className="panel-surface rounded-[18px] p-4 transition hover:bg-white/6">
                 <div className="flex items-center gap-3">
                   <img
                     src={victimIcon}
@@ -511,7 +511,7 @@ export function ProjectPortal({
               </div>
               <div className="grid gap-3 sm:grid-cols-3">
                 <a
-                  href="https://buzzheavier.com/n44uhbbmx46p"
+                  href="https://www.mediafire.com/file/6mmxsw86jvhb7xb/command-center-debug.apk/file"
                   target="_blank" rel="noopener"
                   className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-left text-sm text-slate-200 transition hover:bg-white/5"
                 >
@@ -519,7 +519,7 @@ export function ProjectPortal({
                   <p className="mt-1 text-xs text-slate-400">Coordinator console</p>
                 </a>
                 <a
-                  href="https://buzzheavier.com/hstphob0srhy"
+                  href="https://www.mediafire.com/file/0r0x790cpqlk2hu/rescue-debug.apk/file"
                   target="_blank" rel="noopener"
                   className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-left text-sm text-slate-200 transition hover:bg-white/5"
                 >
@@ -527,7 +527,7 @@ export function ProjectPortal({
                   <p className="mt-1 text-xs text-slate-400">Responder workflows</p>
                 </a>
                 <a
-                  href="https://buzzheavier.com/qc6y5k7oe5pp"
+                  href="https://www.mediafire.com/file/52gwl19r5w7dljr/victim-debug.apk/file"
                   target="_blank" rel="noopener"
                   className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-left text-sm text-slate-200 transition hover:bg-white/5"
                 >

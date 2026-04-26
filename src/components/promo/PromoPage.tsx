@@ -285,7 +285,7 @@ export function PromoPage({
                 'Coordinate across rescue, medical, and supply workflows',
                 'Works even when connectivity degrades (local pairing)',
               ]}
-              downloadHref="https://buzzheavier.com/n44uhbbmx46p"
+              downloadHref="https://www.mediafire.com/file/6mmxsw86jvhb7xb/command-center-debug.apk/file"
             />
             <AppPromoCard
               iconSrc={rescueIcon}
@@ -297,7 +297,7 @@ export function PromoPage({
                 'Send status updates during low-connectivity scenarios',
                 'Mesh + LAN relay friendly',
               ]}
-              downloadHref="https://buzzheavier.com/hstphob0srhy"
+              downloadHref="https://www.mediafire.com/file/0r0x790cpqlk2hu/rescue-debug.apk/file"
             />
             <AppPromoCard
               iconSrc={victimIcon}
@@ -309,7 +309,7 @@ export function PromoPage({
                 'Receive local alerts and instructions',
                 'Designed for simple, fast interaction',
               ]}
-              downloadHref="https://buzzheavier.com/qc6y5k7oe5pp"
+              downloadHref="https://www.mediafire.com/file/52gwl19r5w7dljr/victim-debug.apk/file"
             />
             <AppPromoCard
               name="SupplyGuard Web Console"
