@@ -58,4 +58,5 @@ dependencies {
   implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
 
   debugImplementation("androidx.compose.ui:ui-tooling")
+  implementation("org.osmdroid:osmdroid-android:6.1.18")
 }

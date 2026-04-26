@@ -50,6 +50,7 @@ class MainActivity : ComponentActivity() {
 }
 
 private enum class CcTab(val label: String, val icon: ImageVector) {
+  DASHBOARD("Dashboard", Icons.Default.LocationOn),
   SEND("Send", Icons.Default.MailOutline),
   SOS("SOS", Icons.Default.Warning),
   LOG("Log", Icons.Default.Notifications),
@@ -78,8 +79,25 @@ private fun CommandCenterRoot() {
         permissionLauncher.launch(permissions)
       }
     }
-    LaunchedEffect(hasPermissions) { if (hasPermissions) app.meshEngine.start() else app.meshEngine.stop() }
-    DisposableEffect(Unit) { onDispose { app.meshEngine.stop() } }
+    val bleCount by app.meshEngine.activeConnectionCount.collectAsStateWithLifecycle(0)
+    val nearbyCount by app.nearbyMeshEngine.activeConnectionCount.collectAsStateWithLifecycle(0)
+    val activeConnectionCount = bleCount + nearbyCount
+
+    LaunchedEffect(hasPermissions) {
+      if (hasPermissions) {
+        app.meshEngine.start()
+        app.nearbyMeshEngine.start()
+      } else {
+        app.meshEngine.stop()
+        app.nearbyMeshEngine.stop()
+      }
+    }
+    DisposableEffect(Unit) {
+      onDispose {
+        app.meshEngine.stop()
+        app.nearbyMeshEngine.stop()
+      }
+    }
 
     val vm: CommandCenterViewModel = viewModel(
       factory = object : ViewModelProvider.Factory {
@@ -96,6 +114,7 @@ private fun CommandCenterRoot() {
     } else {
       CommandCenterScreen(
         hasPermissions = hasPermissions,
+        activeConnectionCount = activeConnectionCount,
         commands = state.commands,
         sos = state.sos,
         responses = state.responses.map { it.second },
@@ -113,6 +132,7 @@ private fun CommandCenterRoot() {
 @OptIn(ExperimentalMaterial3Api::class)
 private fun CommandCenterScreen(
   hasPermissions: Boolean,
+  activeConnectionCount: Int,
   commands: List<CommandPayload>,
   sos: List<Pair<ai.supplyguard.data.MeshEnvelope, SosPayload?>>,
   responses: List<ResponsePayload?>,
@@ -123,7 +143,7 @@ private fun CommandCenterScreen(
   onOpenWebUi: () -> Unit,
 ) {
   val context = LocalContext.current
-  var selectedTab by remember { mutableStateOf(CcTab.SEND) }
+  var selectedTab by remember { mutableStateOf(CcTab.DASHBOARD) }
 
   Scaffold(
     topBar = {
@@ -139,6 +159,11 @@ private fun CommandCenterScreen(
           titleContentColor = MaterialTheme.colorScheme.onSurface,
         ),
         actions = {
+          if (activeConnectionCount > 0) {
+            Badge(containerColor = MaterialTheme.colorScheme.primaryContainer) {
+              Text("$activeConnectionCount Linked", color = MaterialTheme.colorScheme.onPrimaryContainer)
+            }
+          }
           TextButton(onClick = {
             WorkScheduler.enqueueBackendSyncNow(context, BuildConfig.BACKEND_BASE_URL)
           }) { Text("Sync") }
@@ -194,6 +219,7 @@ private fun CommandCenterScreen(
       }
 
       when (selectedTab) {
+        CcTab.DASHBOARD -> DashboardTab()
         CcTab.SEND -> SendTab(hasPermissions, onSendToVictim, onSendToRescue, onBroadcast)
         CcTab.SOS  -> SosTab(sos, hasPermissions, onForwardSosLocationToRescue)
         CcTab.LOG  -> LogTab(commands, responses)
@@ -559,7 +585,8 @@ private fun requiredMeshPermissions(): Array<String> {
   return if (Build.VERSION.SDK_INT >= 33) {
     arrayOf(Manifest.permission.POST_NOTIFICATIONS, Manifest.permission.BLUETOOTH_SCAN,
       Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.BLUETOOTH_ADVERTISE,
-      Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+      Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION,
+      Manifest.permission.NEARBY_WIFI_DEVICES)
   } else if (Build.VERSION.SDK_INT >= 31) {
     arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT,
       Manifest.permission.BLUETOOTH_ADVERTISE,

@@ -20,6 +20,7 @@ import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Context
+import android.util.Log
 import android.os.ParcelUuid
 import ai.supplyguard.data.CommandPayload
 import ai.supplyguard.data.MeshEnvelope
@@ -30,6 +31,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import ai.supplyguard.notify.CommandNotifications
 import kotlinx.serialization.json.Json
@@ -62,14 +65,21 @@ class BleMeshEngine(
   private var gattServer: BluetoothGattServer? = null
 
   private val activeConnections = ConcurrentHashMap<String, BluetoothGatt>()
+  private val _activeConnectionCount = MutableStateFlow(0)
+  val activeConnectionCount: StateFlow<Int> = _activeConnectionCount
+  
+  private val TAG = "BleMeshEngine"
+
   private var loopJob: Job? = null
 
   @Volatile private var running: Boolean = false
   @Volatile private var isAdvertising: Boolean = false
 
+  @SuppressLint("MissingPermission")
   fun start() {
     if (running) return
     running = true
+    Log.d(TAG, "Starting BleMeshEngine")
 
     try { startGattServer() } catch (_: Throwable) {}
     try { startAdvertising() } catch (_: Throwable) {}
@@ -77,6 +87,7 @@ class BleMeshEngine(
     loopJob = scope.launch { dutyCycleLoop() }
   }
 
+  @SuppressLint("MissingPermission")
   fun stop() {
     running = false
     isAdvertising = false
@@ -97,6 +108,7 @@ class BleMeshEngine(
       } catch (_: Throwable) {}
     }
     activeConnections.clear()
+    _activeConnectionCount.value = 0
 
     try {
       gattServer?.close()
@@ -104,6 +116,7 @@ class BleMeshEngine(
     gattServer = null
   }
 
+  @SuppressLint("MissingPermission")
   private fun startGattServer() {
     val server = try {
       btManager?.openGattServer(appContext, gattServerCallback)
@@ -126,13 +139,16 @@ class BleMeshEngine(
 
   private val advertiseCallback = object : AdvertiseCallback() {
     override fun onStartSuccess(settingsInEffect: AdvertiseSettings?) {
+      Log.d(TAG, "BLE Advertising started successfully")
       isAdvertising = true
     }
     override fun onStartFailure(errorCode: Int) {
+      Log.e(TAG, "BLE Advertising failed with code $errorCode")
       isAdvertising = false
     }
   }
 
+  @SuppressLint("MissingPermission")
   private fun startAdvertising() {
     if (isAdvertising) return
     val adv = try { adapter?.bluetoothLeAdvertiser } catch (_: Throwable) { null } ?: return
@@ -191,17 +207,19 @@ class BleMeshEngine(
       .build()
 
     s.startScan(filters, settings, scanCallback)
+    Log.d(TAG, "BLE Scan started")
   }
 
 
 
   private val scanCallback = object : ScanCallback() {
+    @SuppressLint("MissingPermission")
     override fun onScanResult(callbackType: Int, result: ScanResult) {
       val device = result.device ?: return
       // Avoid connecting to ourselves and avoid reconnect spam.
       if (!running) return
-      val key = device.address
-      if (activeConnections.containsKey(key)) return
+      if (activeConnections.containsKey(device.address)) return
+      Log.d(TAG, "Device found: ${device.address} (${device.name ?: "Unknown"})")
       connectAndExchange(device)
     }
   }
@@ -212,11 +230,15 @@ class BleMeshEngine(
       val gatt = device.connectGatt(appContext, false, object : BluetoothGattCallback() {
         override fun onConnectionStateChange(g: BluetoothGatt, status: Int, newState: Int) {
           if (newState == BluetoothProfile.STATE_CONNECTED) {
+            Log.i(TAG, "Connected to ${device.address}")
             activeConnections[device.address] = g
-            try { g.requestMtu(185) } catch (_: Throwable) {}
+            _activeConnectionCount.value = activeConnections.size
+            try { g.requestMtu(512) } catch (_: Throwable) { g.requestMtu(185) }
             try { g.discoverServices() } catch (_: Throwable) {}
           } else {
+            Log.i(TAG, "Disconnected from ${device.address}")
             activeConnections.remove(device.address)
+            _activeConnectionCount.value = activeConnections.size
             try { g.close() } catch (_: Throwable) {}
           }
         }
@@ -238,6 +260,7 @@ class BleMeshEngine(
     }
   }
 
+  @SuppressLint("MissingPermission")
   private suspend fun sendForwardCandidates(gatt: BluetoothGatt, ch: BluetoothGattCharacteristic) {
     val dao = db.meshMessageDao()
     val now = System.currentTimeMillis()
@@ -264,17 +287,26 @@ class BleMeshEngine(
       val bytes = json.encodeToString(MeshEnvelope.serializer(), forwarded)
         .toByteArray(StandardCharsets.UTF_8)
 
+      if (bytes.size > 512) {
+        Log.w(TAG, "Payload too large for single BLE write (${bytes.size} bytes). Truncation may occur.")
+      }
+
       ch.value = bytes
       ch.writeType = BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
+      Log.d(TAG, "Writing ${bytes.size} bytes to ${gatt.device.address}")
       val ok = gatt.writeCharacteristic(ch)
-      if (!ok) break
-      delay(90)
+      if (!ok) {
+        Log.e(TAG, "Failed to write characteristic to ${gatt.device.address}")
+        break
+      }
+      delay(120)
     }
 
     gatt.disconnect()
   }
 
   private val gattServerCallback = object : BluetoothGattServerCallback() {
+    @SuppressLint("MissingPermission")
     override fun onCharacteristicWriteRequest(
       device: BluetoothDevice,
       requestId: Int,
@@ -289,6 +321,7 @@ class BleMeshEngine(
         try {
           val raw = String(value, StandardCharsets.UTF_8)
           val env = json.decodeFromString(MeshEnvelope.serializer(), raw)
+          Log.d(TAG, "BLE received payload ${env.id} type=${env.type} from ${device.address}")
           val isNew = repository.router.onReceive(env, rssi = null)
           if (isNew && env.type == MeshMessageType.COMMAND) {
             runCatching { json.decodeFromString(CommandPayload.serializer(), env.payload) }

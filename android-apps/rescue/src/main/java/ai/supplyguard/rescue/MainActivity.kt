@@ -8,6 +8,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -38,6 +39,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -96,8 +98,18 @@ private fun RescueAppRoot() {
       }
     }
 
+    val bleCount by app.meshEngine.activeConnectionCount.collectAsStateWithLifecycle(0)
+    val nearbyCount by app.nearbyMeshEngine.activeConnectionCount.collectAsStateWithLifecycle(0)
+    val activeConnectionCount = bleCount + nearbyCount
+
     LaunchedEffect(hasMeshPermissions) {
-      if (hasMeshPermissions) app.meshEngine.start() else app.meshEngine.stop()
+      if (hasMeshPermissions) {
+        app.meshEngine.start()
+        app.nearbyMeshEngine.start()
+      } else {
+        app.meshEngine.stop()
+        app.nearbyMeshEngine.stop()
+      }
     }
 
     // Re-check permissions every time the app resumes (covers returning from Settings)
@@ -112,6 +124,7 @@ private fun RescueAppRoot() {
       onDispose {
         lifecycleOwner.lifecycle.removeObserver(observer)
         app.meshEngine.stop()
+        app.nearbyMeshEngine.stop()
       }
     }
 
@@ -125,13 +138,24 @@ private fun RescueAppRoot() {
     )
     val state by vm.state.collectAsStateWithLifecycle()
 
-    RescueScreen(
-      hasMeshPermissions = hasMeshPermissions,
-      commands = state.commands,
-      sos = state.sos,
-      onSendResponse = vm::sendResponse,
-      onSendLocationBroadcast = vm::sendLocationBroadcast,
-    )
+    var selectedSosItem by remember { mutableStateOf<SosItem?>(null) }
+
+    if (selectedSosItem != null) {
+      MissionDetailsScreen(
+        sosPayload = selectedSosItem!!.payload,
+        onBack = { selectedSosItem = null }
+      )
+    } else {
+      RescueScreen(
+        hasMeshPermissions = hasMeshPermissions,
+        activeConnectionCount = activeConnectionCount,
+        commands = state.commands,
+        sos = state.sos,
+        onSendResponse = vm::sendResponse,
+        onSendLocationBroadcast = vm::sendLocationBroadcast,
+        onSosClick = { item -> selectedSosItem = item }
+      )
+    }
   }
 }
 
@@ -139,10 +163,12 @@ private fun RescueAppRoot() {
 @OptIn(ExperimentalMaterial3Api::class)
 private fun RescueScreen(
   hasMeshPermissions: Boolean,
+  activeConnectionCount: Int,
   commands: List<CommandPayload>,
   sos: List<SosItem>,
   onSendResponse: (String, String, Double?, Double?, Float?) -> Unit,
   onSendLocationBroadcast: (String, Double, Double, Float?) -> Unit,
+  onSosClick: (SosItem) -> Unit,
 ) {
   val context = LocalContext.current
   val activity = context as? android.app.Activity
@@ -309,6 +335,38 @@ private fun RescueScreen(
   }
 
   Scaffold(
+    floatingActionButton = {
+      androidx.compose.material3.FloatingActionButton(
+        onClick = {
+          // Pass a dummy SosItem just to preview the UI
+          val dummyPayload = ai.supplyguard.data.SosPayload(
+            name = "Victim Report (from Rescuer)",
+            locationText = "142 Skyway Rd, Metro City",
+            need = "Medical",
+            latitude = 12.9716,
+            longitude = 77.5946,
+            accuracyMeters = 5.0f
+          )
+          val dummyEnvelope = ai.supplyguard.data.MeshEnvelope(
+            id = "demo-123",
+            type = ai.supplyguard.data.MeshMessageType.SOS,
+            timestampEpochMs = System.currentTimeMillis(),
+            ttl = 10,
+            hops = 0,
+            originDeviceId = "demo-sender",
+            payload = ""
+          )
+          val dummyItem = SosItem(
+            envelope = dummyEnvelope,
+            payload = dummyPayload
+          )
+          onSosClick(dummyItem)
+        },
+        containerColor = MaterialTheme.colorScheme.primary
+      ) {
+        Icon(Icons.Default.Visibility, contentDescription = "Preview UI")
+      }
+    },
     topBar = {
       TopAppBar(
         title = {
@@ -322,6 +380,11 @@ private fun RescueScreen(
           titleContentColor = MaterialTheme.colorScheme.onSurface,
         ),
         actions = {
+          if (activeConnectionCount > 0) {
+            Badge(containerColor = MaterialTheme.colorScheme.primaryContainer) {
+              Text("$activeConnectionCount Linked", color = MaterialTheme.colorScheme.onPrimaryContainer)
+            }
+          }
           TextButton(
             onClick = {
               WorkScheduler.enqueueBackendSyncNow(context, BuildConfig.BACKEND_BASE_URL)
@@ -516,7 +579,12 @@ private fun RescueScreen(
         item { Text("No SOS received yet.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
       } else {
         items(sos) { item ->
-          SosCard(item = item, hasMeshPermissions = hasMeshPermissions, onRespond = { activeRespondTarget = item })
+          SosCard(
+            item = item, 
+            hasMeshPermissions = hasMeshPermissions, 
+            onRespond = { activeRespondTarget = item },
+            onClick = { onSosClick(item) }
+          )
         }
       }
 
@@ -558,13 +626,16 @@ private fun CommandCard(payload: CommandPayload) {
 }
 
 @Composable
-private fun SosCard(item: SosItem, hasMeshPermissions: Boolean, onRespond: () -> Unit) {
+private fun SosCard(item: SosItem, hasMeshPermissions: Boolean, onRespond: () -> Unit, onClick: () -> Unit) {
   val title = item.payload?.name?.takeIf { it.isNotBlank() } ?: "SOS"
   val location = item.payload?.locationText?.takeIf { it.isNotBlank() } ?: "Unknown location"
   val need = item.payload?.need?.takeIf { it.isNotBlank() } ?: "No details provided"
   val hasCoordinates = item.payload?.latitude != null && item.payload?.longitude != null
 
-  Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
+  Card(
+    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+    modifier = Modifier.clickable { onClick() }
+  ) {
     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
       Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         Icon(Icons.Default.Warning, contentDescription = null,
@@ -631,6 +702,7 @@ private fun requiredMeshPermissions(): Array<String> {
       Manifest.permission.BLUETOOTH_ADVERTISE,
       Manifest.permission.ACCESS_FINE_LOCATION,
       Manifest.permission.ACCESS_COARSE_LOCATION,
+      Manifest.permission.NEARBY_WIFI_DEVICES,
     )
   } else if (Build.VERSION.SDK_INT >= 31) {
     arrayOf(

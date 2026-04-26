@@ -36,8 +36,9 @@ dependencies {
   implementation("androidx.core:core-ktx:1.13.1")
   implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
 
-  // Location Services
+  // Location Services & Nearby
   implementation("com.google.android.gms:play-services-location:21.1.0")
+  implementation("com.google.android.gms:play-services-nearby:19.0.0")
 
   // Room
   implementation("androidx.room:room-runtime:2.6.1")

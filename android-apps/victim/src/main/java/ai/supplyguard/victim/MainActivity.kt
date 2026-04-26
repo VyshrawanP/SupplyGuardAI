@@ -37,6 +37,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -97,8 +99,18 @@ private fun VictimAppRoot() {
       }
     }
 
+    val bleCount by app.meshEngine.activeConnectionCount.collectAsStateWithLifecycle(0)
+    val nearbyCount by app.nearbyMeshEngine.activeConnectionCount.collectAsStateWithLifecycle(0)
+    val activeConnectionCount = bleCount + nearbyCount
+
     LaunchedEffect(hasMeshPermissions) {
-      if (hasMeshPermissions) app.meshEngine.start() else app.meshEngine.stop()
+      if (hasMeshPermissions) {
+        app.meshEngine.start()
+        app.nearbyMeshEngine.start()
+      } else {
+        app.meshEngine.stop()
+        app.nearbyMeshEngine.stop()
+      }
     }
 
     // Re-check permissions every time the app resumes (covers returning from Settings)
@@ -113,6 +125,7 @@ private fun VictimAppRoot() {
       onDispose {
         lifecycleOwner.lifecycle.removeObserver(observer)
         app.meshEngine.stop()
+        app.nearbyMeshEngine.stop()
       }
     }
 
@@ -126,11 +139,27 @@ private fun VictimAppRoot() {
     )
 
     val state by vm.state.collectAsStateWithLifecycle()
-    VictimScreen(
-      hasMeshPermissions = hasMeshPermissions,
-      commands = state.commands,
-      onSendSos = vm::sendSos,
-    )
+    var isReportingVictim by remember { mutableStateOf(false) }
+
+    if (isReportingVictim) {
+      VictimReportScreen(
+        onBack = { isReportingVictim = false },
+        activeConnectionCount = activeConnectionCount,
+        hasMeshPermissions = hasMeshPermissions,
+        onSendVictimReport = { need, lat, lon, acc ->
+          vm.sendSos(null, null, need, lat, lon, acc)
+          isReportingVictim = false
+        }
+      )
+    } else {
+      VictimScreen(
+        hasMeshPermissions = hasMeshPermissions,
+        activeConnectionCount = activeConnectionCount,
+        commands = state.commands,
+        onSendSos = vm::sendSos,
+        onReportVictim = { isReportingVictim = true }
+      )
+    }
   }
 }
 
@@ -138,8 +167,10 @@ private fun VictimAppRoot() {
 @OptIn(ExperimentalMaterial3Api::class)
 private fun VictimScreen(
   hasMeshPermissions: Boolean,
+  activeConnectionCount: Int,
   commands: List<CommandPayload>,
   onSendSos: (String?, String?, String?, Double?, Double?, Float?) -> Unit,
+  onReportVictim: () -> Unit,
 ) {
   val context = LocalContext.current
   val activity = context as? android.app.Activity
@@ -219,6 +250,14 @@ private fun VictimScreen(
   }
 
   Scaffold(
+    floatingActionButton = {
+      FloatingActionButton(
+        onClick = onReportVictim,
+        containerColor = MaterialTheme.colorScheme.primary
+      ) {
+        Icon(Icons.Default.Add, contentDescription = "File Victim Report")
+      }
+    },
     topBar = {
       TopAppBar(
         title = {
@@ -232,6 +271,11 @@ private fun VictimScreen(
           titleContentColor = MaterialTheme.colorScheme.onSurface,
         ),
         actions = {
+          if (activeConnectionCount > 0) {
+            Badge(containerColor = MaterialTheme.colorScheme.primaryContainer) {
+              Text("$activeConnectionCount Linked", color = MaterialTheme.colorScheme.onPrimaryContainer)
+            }
+          }
           TextButton(
             onClick = {
               WorkScheduler.enqueueBackendSyncNow(context, BuildConfig.BACKEND_BASE_URL)
@@ -538,6 +582,7 @@ private fun requiredMeshPermissions(): Array<String> {
       Manifest.permission.BLUETOOTH_ADVERTISE,
       Manifest.permission.ACCESS_FINE_LOCATION,
       Manifest.permission.ACCESS_COARSE_LOCATION,
+      Manifest.permission.NEARBY_WIFI_DEVICES,
     )
   } else if (Build.VERSION.SDK_INT >= 31) {
     arrayOf(
