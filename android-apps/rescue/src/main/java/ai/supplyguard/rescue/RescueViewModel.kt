@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import ai.supplyguard.data.CommandPayload
 import ai.supplyguard.data.CommandTarget
 import ai.supplyguard.data.MeshEnvelope
+import ai.supplyguard.data.ResponsePayload
 import ai.supplyguard.data.SosPayload
 import ai.supplyguard.mesh.MeshRepository
 import kotlinx.coroutines.flow.SharingStarted

@@ -117,10 +117,12 @@ fun DashboardTab(
   // Convert SOS payloads to Map markers
   val sosMarkers = remember(sos) {
     sos.mapNotNull { (env, payload) ->
-      if (payload?.latitude != null && payload.longitude != null) {
+      val lat = payload?.latitude
+      val lon = payload?.longitude
+      if (lat != null && lon != null) {
         val title = payload.name?.takeIf { it.isNotBlank() } ?: "SOS (${env.originDeviceId.takeLast(4)})"
         val snippet = payload.need?.takeIf { it.isNotBlank() } ?: "Emergency Alert"
-        Triple(GeoPoint(payload.latitude, payload.longitude), title, snippet)
+        Triple(GeoPoint(lat, lon), title, snippet)
       } else null
     }
   }

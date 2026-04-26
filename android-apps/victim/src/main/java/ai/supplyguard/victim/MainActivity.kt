@@ -628,10 +628,12 @@ private fun ResponseCard(payload: ai.supplyguard.data.ResponsePayload) {
         )
       }
       Text(payload.message, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSecondaryContainer)
-      if (payload.latitude != null && payload.longitude != null) {
+      val lat = payload.latitude
+      val lon = payload.longitude
+      if (lat != null && lon != null) {
         val accuracy = payload.accuracyMeters?.let { " (±${String.format("%.0f", it)}m)" } ?: ""
         Text(
-          "From Lat: ${String.format("%.6f", payload.latitude)}, Lon: ${String.format("%.6f", payload.longitude)}$accuracy",
+          "From Lat: ${String.format("%.6f", lat)}, Lon: ${String.format("%.6f", lon)}$accuracy",
           style = MaterialTheme.typography.labelSmall,
           color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f),
         )
