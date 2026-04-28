@@ -9,8 +9,11 @@ import { WebSocketServer } from "ws";
 import fs from "fs";
 import os from "os";
 import { spawn } from "child_process";
+import { GoogleGenAI } from "@google/genai";
 
 dotenv.config();
+
+const ai = process.env.GEMINI_API_KEY ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY }) : null;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -308,6 +311,76 @@ async function startServer() {
       impactRadius: intensity * 5, // km
       affectedShipments: Math.floor(Math.random() * 10) + 1
     });
+  });
+
+  // --- Gemini 2.5 Flash Insights ---
+  app.post("/api/gemini-insights", async (req, res) => {
+    if (!ai) {
+      return res.status(500).json({ error: "Gemini API key not configured" });
+    }
+
+    const { summary, topLocality, topRoute, strainedZones, disasterMode } = req.body;
+
+    // "Sometimes, not consistently" logic: 10% chance to simulate a rate limit or "offline" state
+    // for the demo, making it feel intermittent as requested.
+    if (Math.random() < 0.1) {
+      return res.json({ 
+        isRealAI: false, 
+        insights: [
+          { type: 'reroute', message: "AI reasoning paused to conserve bandwidth. Using local heuristics." },
+          { type: 'dispatch', message: "Heuristic-based dispatch active for current zone." },
+          { type: 'risk', message: "Risk analysis using local baseline metrics." }
+        ]
+      });
+    }
+
+    try {
+      const prompt = `
+        You are the SupplyGuard AI Reasoning Engine. 
+        Current Simulation State:
+        - Disaster Mode: ${disasterMode}
+        - Average Risk: ${summary.averageRisk}%
+        - Impacted Population: ${summary.impactedPopulation}
+        - Missions Required: ${summary.missionsRequired}
+        - Critical Hospitals: ${summary.hospitalsCritical}
+        - Top Vulnerable Locality: ${topLocality?.name} (Risk: ${topLocality?.riskScore}%)
+        - Most Critical Route: ${topRoute?.name} (Status: ${topRoute?.status}, Risk: ${topRoute?.riskScore}%)
+        - Strained Zones: ${strainedZones}
+
+        Provide 3 concise, high-impact tactical insights for the dashboard.
+        1. REROUTE: A decision about road vs air transport or specific route changes.
+        2. DISPATCH: A decision about resource allocation (ambulances, drones, etc).
+        3. RISK: A strategic warning about escalating factors.
+
+        Format your response as a valid JSON object with an "insights" array:
+        {
+          "insights": [
+            { "type": "reroute", "message": "..." },
+            { "type": "dispatch", "message": "..." },
+            { "type": "risk", "message": "..." }
+          ]
+        }
+      `;
+
+      const result = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        config: {
+          responseMimeType: "application/json",
+        },
+      });
+
+      const responseText = result.text;
+      const parsed = JSON.parse(responseText as string);
+
+      res.json({
+        isRealAI: true,
+        insights: parsed.insights,
+      });
+    } catch (error) {
+      console.error("Gemini Error:", error);
+      res.status(503).json({ error: "AI service temporarily unavailable", isRealAI: false });
+    }
   });
 
   // --- Flutter Web Build Middleware ---

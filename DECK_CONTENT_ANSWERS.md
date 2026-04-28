@@ -15,13 +15,34 @@ Use the information below to fill out your Prototype Deck. These answers are tai
 
 ---
 
-## 2. Process Flow / Use-Case Diagram
-**Scenario: Bridge Collapse on Supply Route**
-1. **Detection**: Ingestion service detects a road-closure signal from a sensor or field report.
-2. **Analysis**: Risk Engine identifies shipments heading toward the closure and calculates a high danger score.
-3. **Optimization**: Route Optimizer finds the fastest safe alternative path.
-4. **Coordination**: Command Center approves the new route; Field App (Flutter) receives the update via sync.
-5. **Recovery**: If a vehicle is trapped, it uses the **Android Mesh** to broadcast an SOS to nearby rescue teams.
+## 2. Integrated Process Flow: "Crisis to Resolution"
+This diagram tracks the lifecycle of a rescue mission, from the first anomaly detection to an offline P2P mesh rescue.
+
+```mermaid
+sequenceDiagram
+    participant S as Environment Sensors
+    participant AI as AI Engine (Risk/Route)
+    participant C as Command Center (React)
+    participant F as Field App (Flutter)
+    participant M as Resilient Mesh (Android)
+
+    Note over S, AI: I. DETECTION & INTELLIGENCE
+    S->>AI: Trigger: Flood/Storm Anomaly Detected
+    AI->>AI: Calculate Risk Score (0-100)
+    AI->>C: Push Alert + Optimized Safe Route
+
+    Note over C, F: II. COMMAND & EXECUTION
+    C->>C: Commander Approves Mission
+    C->>F: Sync Mission Data (Cloud Sync)
+    F->>F: Field Agent begins movement
+
+    Note over F, M: III. OFFLINE CRISIS & MESH RECOVERY
+    Note right of F: Network Infrastructure Fails
+    M->>M: Victim sends SOS via P2P Mesh
+    M->>F: SOS hops through Bluetooth/Wi-Fi Mesh
+    F->>C: Sync Rescue Data via Mesh Gateway
+    C->>C: Mission Success: Resource Assigned
+```
 
 ---
 
@@ -91,4 +112,22 @@ flowchart TD
 - **Starlink Integration**: Direct satellite uplink for the Local Relay Server in total blackout zones.
 - **Swarm Intelligence**: Autonomous drone swarms that can "search and find" victim clusters using thermal imaging.
 - **Wearable Integration**: Syncing heart-rate and health data from smartwatches via the mesh network to prioritize medical rescues.
-- **Predictive Disaster Modeling**: Using historical data to predict where infrastructure failure is most likely to happen *before* the disaster hits.
+## 8. Strategic Positioning & Impact
+
+### **Opportunities**
+- **Governmental Adoption**: Scalable for national disaster response agencies (e.g., NDRF, FEMA) to coordinate large-scale evacuations.
+- **Supply Chain Resilience**: Commercial logistics companies can integrate the Risk/Route engines to ensure zero-disruption delivery of essential goods during extreme weather.
+- **Smart City Integration**: Proactive incident management by connecting directly to municipal sensor networks and infrastructure.
+
+### **How different is it from existing ideas?**
+- **Offline-First vs. Cloud-Only**: Traditional disaster apps stop working when cell towers fail. SupplyGuard AI is built on a **"Triple-Resilience"** model that defaults to P2P Mesh when the cloud is unreachable.
+- **Integrated AI Explainer**: Unlike "black-box" systems, our integration with Gemini AI provides commanders with natural language rationales for automated rerouting and drone dispatches.
+- **Hybrid Infrastructure**: Combines high-level React dashboards with low-level Android hardware mesh (BLE/Wi-Fi Direct) in a single unified ecosystem.
+
+### **How will it solve the problem?**
+- **Closing the Communication Gap**: By using the **Android Mesh**, we ensure that SOS signals from victims reach rescuers even in "blackout" zones.
+- **Reducing Decision Fatigue**: AI engines automate the complex math of risk and pathfinding, allowing human commanders to focus on life-saving priorities.
+- **Data Persistence**: The system uses a specialized sync engine that caches data at the edge and automatically reconciles with the cloud once a single node reaches a gateway.
+
+### **USP (Unique Selling Point)**
+**"The Zero-Infrastructure Lifecycle"**: SupplyGuard AI is the only solution that maintains a full operational loop—from AI-driven detection to P2P-driven rescue—even when 100% of the public communication infrastructure has collapsed.

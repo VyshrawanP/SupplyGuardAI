@@ -12,6 +12,7 @@ import { ServiceOrchestration } from './sections/ServiceOrchestration';
 import { HospitalOperationsView } from './sections/HospitalOperationsView';
 import { LiveEventFeed } from './sections/LiveEventFeed';
 import { StatusBadge } from './ui/StatusBadge';
+import { GeminiInsights } from './sections/GeminiInsights';
 import { INDIA_SCENARIO_CUSTOM_ID } from '../store/indiaScenarioPresets';
 import { useSimulationClock } from '../hooks/useSimulationClock';
 import { useAlertSound } from '../hooks/useAlertSound';
@@ -33,7 +34,7 @@ export const Dashboard = ({
   const [activeTab, setActiveTab] = useState<Tab>('map');
   const {
     settings, localities, hospitals, routes, alerts, missions, fleet,
-    summary, aiBriefing, comparisons, notifications, operations,
+    summary, aiBriefing, geminiInsights, comparisons, notifications, operations,
     selectedLocalityId, selectedHospitalId,
     updateSimulation, selectLocality, selectHospital, resetSimulation,
   } = useStore();
@@ -153,6 +154,7 @@ export const Dashboard = ({
               <div className="panel-surface rounded-2xl p-4">
                 <KPIDashboard summary={summary} />
               </div>
+              <GeminiInsights insights={geminiInsights} />
               <SimulationControls
                 settings={settings}
                 localityOptions={localities.map(l => ({ id: l.id, name: l.name }))}

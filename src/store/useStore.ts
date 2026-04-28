@@ -167,6 +167,13 @@ export interface AIBriefing {
   priorities: string[];
 }
 
+export interface GeminiInsight {
+  id: string;
+  type: 'reroute' | 'dispatch' | 'risk';
+  message: string;
+  isRealAI?: boolean;
+}
+
 export interface ScenarioComparison {
   label: string;
   current: number;
@@ -244,6 +251,7 @@ interface SupplyGuardState {
   timeline: TimelineEvent[];
   summary: Summary;
   aiBriefing: AIBriefing;
+  geminiInsights: GeminiInsight[];
   comparisons: ScenarioComparison[];
   notifications: NotificationItem[];
   operations: OperationsStats;
@@ -252,12 +260,15 @@ interface SupplyGuardState {
   selectedHospitalId: string;
   selectedStressTimelineId: string;
   selectedStressDecisionId: string;
+  isAILoading: boolean;
+  lastAIRefresh: number;
   updateSimulation: (patch: Partial<SimulationSettings>) => void;
   selectLocality: (id: string) => void;
   selectHospital: (id: string) => void;
   selectStressTimeline: (id: string) => void;
   selectStressDecision: (id: string) => void;
   resetSimulation: () => void;
+  fetchGeminiInsights: () => Promise<void>;
 }
 
 const baseSettings: SimulationSettings = {
@@ -621,6 +632,30 @@ const computeScenario = (settings: SimulationSettings) => {
     ],
   } satisfies AIBriefing;
 
+  const geminiInsights: GeminiInsight[] = [
+    {
+      id: 'ins-1',
+      type: 'reroute',
+      message: topRoute.status === 'blocked' || topRoute.status === 'restricted'
+        ? `I've rerouted heavy convoys away from ${topRoute.name} due to ${topRoute.riskScore}% risk. Moving them via secondary corridors to ensure medicine flow.`
+        : `Primary corridors like ${topRoute.name} are currently stable. I'm keeping ambulances on these main routes for maximum speed.`,
+    },
+    {
+      id: 'ins-2',
+      type: 'dispatch',
+      message: settings.waterLevel > 60
+        ? `Water levels at ${settings.waterLevel}cm are making road transport inefficient for ${topLocality.name}. I'm escalating drone sorties to 85% of total med-delivery load.`
+        : `Road access to ${topLocality.name} remains viable. I'm prioritizing ALS ambulances for trauma cases while using drones for high-speed vaccine delivery.`,
+    },
+    {
+      id: 'ins-3',
+      type: 'risk',
+      message: summary.averageRisk > 60
+        ? `Critical risk detected in ${strainedLocalities.length} zones. I'm deploying autonomous "mesh-repeaters" to ${strainedLocalities[0]?.name ?? 'impacted areas'} to maintain communication.`
+        : `Overall city risk is manageable. I'm focusing my attention on hospital supply chains to prevent any surge-related stockouts.`,
+    },
+  ];
+
   const nominalRisk = 22;
   const nominalMissions = 6;
   const nominalCritical = 0;
@@ -888,6 +923,7 @@ const computeScenario = (settings: SimulationSettings) => {
     timeline,
     summary,
     aiBriefing,
+    geminiInsights,
     comparisons,
     notifications,
     operations,
@@ -899,13 +935,21 @@ const computeScenario = (settings: SimulationSettings) => {
   };
 };
 
-export const useStore = create<SupplyGuardState>((set) => ({
-  ...computeScenario(baseSettings),
-  updateSimulation: (patch) =>
-    set((state) => {
-      const settings = { ...state.settings, ...patch };
-      return computeScenario(settings);
-    }),
+const initialState = computeScenario(baseSettings);
+
+export const useStore = create<SupplyGuardState>((set, get) => ({
+  ...initialState,
+  updateSimulation: (patch) => {
+    const newSettings = { ...get().settings, ...patch };
+    set({
+      settings: newSettings,
+      ...computeScenario(newSettings),
+    });
+    
+    if (Math.random() < 0.4) {
+      get().fetchGeminiInsights();
+    }
+  },
   selectLocality: (id) =>
     set((state) => {
       const exists = state.localities.some((locality) => locality.id === id);
@@ -932,4 +976,44 @@ export const useStore = create<SupplyGuardState>((set) => ({
       return exists ? { selectedStressDecisionId: id } : state;
     }),
   resetSimulation: () => set(() => computeScenario(baseSettings)),
+  isAILoading: false,
+  lastAIRefresh: 0,
+  fetchGeminiInsights: async () => {
+    if (get().isAILoading) return;
+    set({ isAILoading: true });
+    try {
+      const state = get();
+      const payload = {
+        summary: state.summary,
+        topLocality: state.localities.find(l => l.id === state.settings.localityFocus),
+        topRoute: state.routes.sort((a, b) => b.riskScore - a.riskScore)[0],
+        strainedZones: state.localities.filter(l => l.supportPressure !== 'stable').length,
+        disasterMode: state.settings.disasterMode,
+      };
+
+      const response = await fetch('/api/gemini-insights', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) throw new Error('API failed');
+      const data = await response.json();
+      
+      if (data.insights && Array.isArray(data.insights)) {
+        set({ 
+          geminiInsights: data.insights.map((ins: any, i: number) => ({
+            ...ins,
+            id: `ai-ins-${i}-${Date.now()}`,
+            isRealAI: data.isRealAI,
+          })),
+          lastAIRefresh: Date.now()
+        });
+      }
+    } catch (err) {
+      console.error('Gemini fetch failed:', err);
+    } finally {
+      set({ isAILoading: false });
+    }
+  },
 }));
