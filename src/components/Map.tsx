@@ -32,6 +32,12 @@ const REAL_LOCALITY_COORDS: Record<string, LatLng> = {
   rajarajeshwari: { lat: 12.9275, lng: 77.5155 },
   hebbal: { lat: 13.0358, lng: 77.5970 },
   yelahanka: { lat: 13.1007, lng: 77.5963 },
+  bellandur: { lat: 12.9304, lng: 77.6784 },
+  majestic: { lat: 12.9767, lng: 77.5713 },
+  malleshwaram: { lat: 12.9988, lng: 77.5703 },
+  'btm-layout': { lat: 12.9166, lng: 77.6101 },
+  sarjapur: { lat: 12.8576, lng: 77.7850 },
+  'hsr-layout': { lat: 12.9121, lng: 77.6446 },
 };
 
 const REAL_HOSPITAL_COORDS: Record<string, LatLng> = {
@@ -607,6 +613,32 @@ export const Map: React.FC<{ simulationRunning?: boolean; simulationSpeed?: numb
 
             return (
               <React.Fragment key={locality.id}>
+                {/* Disaster Overlays */}
+                {settings.waterLevel > 40 && locality.waterDepth > 1.5 && (
+                  <Circle
+                    center={[position.lat, position.lng]}
+                    radius={riskRadiusMeters(locality.riskScore) * 1.5}
+                    pathOptions={{
+                      color: '#3b82f6',
+                      fillColor: '#3b82f6',
+                      fillOpacity: 0.1,
+                      weight: 0,
+                    }}
+                  />
+                )}
+                {settings.heatLevel > 60 && locality.heatStress > 80 && (
+                  <Circle
+                    center={[position.lat, position.lng]}
+                    radius={riskRadiusMeters(locality.riskScore) * 2}
+                    pathOptions={{
+                      color: '#ef4444',
+                      fillColor: '#ef4444',
+                      fillOpacity: 0.05,
+                      weight: 0,
+                    }}
+                  />
+                )}
+
                 <Circle
                   center={[position.lat, position.lng]}
                   radius={riskRadiusMeters(locality.riskScore)}

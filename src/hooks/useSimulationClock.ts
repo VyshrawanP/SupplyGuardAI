@@ -112,8 +112,8 @@ export function useSimulationClock() {
 
     // Generate contextual events every few ticks
     if (count % 3 === 0) {
-      const localities = ['Indiranagar', 'Whitefield', 'Koramangala', 'KR Puram', 'Hebbal', 'Electronic City'];
-      const hospitals = ['Manipal Hospital', 'St. John\'s Medical', 'Apollo Bannerghatta', 'Aster CMI', 'Vydehi Hospital'];
+      const localities = ['Indiranagar', 'Whitefield', 'Koramangala', 'KR Puram', 'Hebbal', 'Electronic City', 'Bellandur', 'Majestic', 'Sarjapur', 'Malleshwaram'];
+      const hospitals = ['Manipal Hospital', 'St. John\'s Medical', 'Apollo Bannerghatta', 'Aster CMI', 'Vydehi Hospital', 'Bowring Hospital'];
       const loc = localities[Math.floor(Math.random() * localities.length)];
       const hosp = hospitals[Math.floor(Math.random() * hospitals.length)];
 
@@ -124,6 +124,10 @@ export function useSimulationClock() {
         ['📦', `Food convoy reached staging point near ${loc}`, 'info'],
         ['⚡', `Power backup status checked at ${hosp}`, 'info'],
         ['🔄', `Route optimizer recalculated — ${1 + Math.floor(Math.random() * 3)} corridors rerouted`, 'warning'],
+        ['🛰️', `Satellite imagery confirms road collapse near ${loc}`, 'critical'],
+        ['📡', `Mesh network nodes reporting high density in ${loc}`, 'info'],
+        ['🚒', `Rescue teams coordinating structural sweep in ${loc}`, 'warning'],
+        ['🩺', `Triage backlog at ${hosp} exceeds 15 minutes`, 'warning'],
       ];
 
       if (newWater > 70) {
@@ -131,6 +135,9 @@ export function useSimulationClock() {
       }
       if (newQuake > 65) {
         eventPool.push(['🔴', `Structural damage reported in ${loc} zone`, 'critical']);
+      }
+      if (settings.stormLevel > 75) {
+        eventPool.push(['🚫', `Drone grounding order active due to ${settings.stormLevel} knots wind in ${loc}`, 'critical']);
       }
 
       const [emoji, msg, sev] = eventPool[Math.floor(Math.random() * eventPool.length)];

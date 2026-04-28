@@ -282,6 +282,12 @@ const localitySeeds: LocalitySeed[] = [
   { id: 'rajarajeshwari', name: 'Rajarajeshwari Nagar', zone: 'West', position: { lat: 66, lng: 20 }, population: 260000, elevation: 909, hospitalIds: ['bgs'], corridorIds: ['west-south'], demandMultiplier: 1.14 },
   { id: 'hebbal', name: 'Hebbal', zone: 'North', position: { lat: 28, lng: 34 }, population: 240000, elevation: 915, hospitalIds: ['aster'], corridorIds: ['north-core'], demandMultiplier: 1.08 },
   { id: 'yelahanka', name: 'Yelahanka', zone: 'North', position: { lat: 16, lng: 30 }, population: 270000, elevation: 915, hospitalIds: ['aster'], corridorIds: ['north-core'], demandMultiplier: 1.02 },
+  { id: 'bellandur', name: 'Bellandur', zone: 'South East', position: { lat: 52, lng: 68 }, population: 180000, elevation: 865, hospitalIds: ['st-johns', 'manipal'], corridorIds: ['orr-east', 'ecity-south'], demandMultiplier: 1.45 },
+  { id: 'majestic', name: 'Majestic', zone: 'Core', position: { lat: 42, lng: 44 }, population: 150000, elevation: 918, hospitalIds: ['bowring'], corridorIds: ['north-core', 'core-south'], demandMultiplier: 1.12 },
+  { id: 'malleshwaram', name: 'Malleshwaram', zone: 'West', position: { lat: 34, lng: 42 }, population: 140000, elevation: 925, hospitalIds: ['aster', 'bowring'], corridorIds: ['north-core'], demandMultiplier: 0.98 },
+  { id: 'btm-layout', name: 'BTM Layout', zone: 'South', position: { lat: 68, lng: 52 }, population: 220000, elevation: 895, hospitalIds: ['apollo', 'st-johns'], corridorIds: ['core-south'], demandMultiplier: 1.25 },
+  { id: 'sarjapur', name: 'Sarjapur', zone: 'East', position: { lat: 62, lng: 84 }, population: 120000, elevation: 882, hospitalIds: ['manipal'], corridorIds: ['orr-east'], demandMultiplier: 1.35 },
+  { id: 'hsr-layout', name: 'HSR Layout', zone: 'South East', position: { lat: 60, lng: 64 }, population: 160000, elevation: 890, hospitalIds: ['st-johns'], corridorIds: ['ecity-south'], demandMultiplier: 1.15 },
 ];
 
 const hospitalSeeds: HospitalSeed[] = [
@@ -332,36 +338,46 @@ const computeScenario = (settings: SimulationSettings) => {
   const localities = localitySeeds.map((seed) => {
     const focusDistance = distance(seed.position, focus.position);
     const focusFactor = clamp(100 - focusDistance * 1.35) / 100;
-    const floodBase = clamp(settings.waterLevel + (900 - seed.elevation) * 0.9 + focusFactor * 30);
-    const quakeBase = clamp(settings.earthquakeLevel * 1.4 + focusFactor * 35 + seed.demandMultiplier * 6);
-    const stormBase = clamp(settings.stormLevel * 1.15 + focusFactor * 26);
-    const heatBase = clamp(settings.heatLevel * 1.2 + seed.demandMultiplier * 8);
+    
+    // Low elevation areas like Bellandur flood significantly faster
+    const elevationImpact = Math.max(0, (910 - seed.elevation) * 1.5);
+    const floodBase = clamp(settings.waterLevel * 0.8 + elevationImpact + focusFactor * 25);
+    
+    const quakeBase = clamp(settings.earthquakeLevel * 1.2 + focusFactor * 30 + seed.demandMultiplier * 10);
+    const stormBase = clamp(settings.stormLevel * 1.1 + focusFactor * 20);
+    const heatBase = clamp(settings.heatLevel * 1.15 + seed.demandMultiplier * 12);
+    
     const modeBoost = settings.disasterMode === 'compound'
-      ? 18
+      ? 15
       : settings.disasterMode === 'flood'
-        ? floodBase * 0.16
+        ? floodBase * 0.2
         : settings.disasterMode === 'earthquake'
-          ? quakeBase * 0.18
+          ? quakeBase * 0.22
           : settings.disasterMode === 'storm'
-            ? stormBase * 0.15
-            : heatBase * 0.14;
+            ? stormBase * 0.18
+            : heatBase * 0.16;
 
     const riskScore = clamp(
-      floodBase * 0.33 +
-      quakeBase * 0.27 +
-      stormBase * 0.24 +
-      heatBase * 0.16 +
+      floodBase * 0.35 +
+      quakeBase * 0.30 +
+      stormBase * 0.20 +
+      heatBase * 0.15 +
       modeBoost
     );
-    const accessibility = clamp(100 - (floodBase * 0.45 + quakeBase * 0.25 + stormBase * 0.2));
-    const affectedPopulation = Math.round(seed.population * (riskScore / 100) * 0.55);
-    const medicineDemand = Math.round((affectedPopulation / 1000) * (1.8 + seed.demandMultiplier) + settings.medicineBuffer * 0.35);
-    const foodDemand = Math.round((affectedPopulation / 1000) * (2.6 + focusFactor));
-    const rescueDemand = Math.round((quakeBase * 0.42 + stormBase * 0.24 + focusFactor * 18) / 2.3);
-    const evacDemand = Math.round((floodBase * 0.45 + riskScore * 0.22) * 16);
-    const supportPressure = riskScore > 78 || accessibility < 35
+    
+    // Accessibility is killed by flood and quake damage
+    const accessibility = clamp(100 - (floodBase * 0.5 + quakeBase * 0.35 + stormBase * 0.15));
+    const affectedPopulation = Math.round(seed.population * (riskScore / 100) * 0.65);
+    
+    // Inventory slider (medicineBuffer) directly affects how much demand can be "seen" or "met"
+    const medicineDemand = Math.round((affectedPopulation / 1000) * (2.2 + seed.demandMultiplier) * (1 + (100 - settings.medicineBuffer) / 200));
+    const foodDemand = Math.round((affectedPopulation / 1000) * (3.1 + focusFactor));
+    const rescueDemand = Math.round((quakeBase * 0.5 + stormBase * 0.3 + focusFactor * 20) / 2);
+    const evacDemand = Math.round((floodBase * 0.6 + riskScore * 0.25) * 20);
+    
+    const supportPressure = riskScore > 75 || accessibility < 30
       ? 'critical'
-      : riskScore > 56 || accessibility < 55
+      : riskScore > 50 || accessibility < 50
         ? 'strained'
         : 'stable';
 
@@ -491,10 +507,19 @@ const computeScenario = (settings: SimulationSettings) => {
     ];
 
     return servicePlan.map((plan) => {
+      const isDroneStormGrounded = plan.service === 'drone' && settings.stormLevel > 75;
       const serviceBias = plan.service === 'drone' ? 0.75 : plan.service === 'ambulance' ? 0.95 : 1.15;
-      const etaMinutes = Math.round(distance(nearestHub.position, locality.position) * (2.8 * serviceBias) + routeRisk * (plan.service === 'drone' ? 0.35 : 0.6));
-      const priority = locality.supportPressure === 'critical' || routeRisk > 78 ? 'critical' : locality.riskScore > 65 ? 'priority' : 'routine';
+      const etaMinutes = isDroneStormGrounded ? 0 : Math.round(distance(nearestHub.position, locality.position) * (2.8 * serviceBias) + routeRisk * (plan.service === 'drone' ? 0.35 : 0.6));
+      const priority = (locality.supportPressure === 'critical' || routeRisk > 78) && !isDroneStormGrounded ? 'critical' : locality.riskScore > 65 ? 'priority' : 'routine';
       const destinationId = targetHospital?.id ?? locality.id;
+
+      let status: ServiceMission['status'] = priority === 'critical' ? 'in-progress' : routeRisk > 60 ? 'dispatching' : 'queued';
+      let narrative = plan.narrative;
+
+      if (isDroneStormGrounded) {
+        status = 'queued';
+        narrative = `Grounded: High wind speeds (${settings.stormLevel} knots) prevent safe drone flight to ${locality.name}. Missions will resume when storm clears.`;
+      }
 
       return {
         id: `${plan.service}-${locality.id}`,
@@ -503,12 +528,12 @@ const computeScenario = (settings: SimulationSettings) => {
         localityId: locality.id,
         originId: nearestHub.id,
         destinationId,
-        units: plan.units,
+        units: isDroneStormGrounded ? 0 : plan.units,
         etaMinutes,
         routeRisk,
         priority,
-        status: priority === 'critical' ? 'in-progress' : routeRisk > 60 ? 'dispatching' : 'queued',
-        narrative: plan.narrative,
+        status,
+        narrative,
       } satisfies ServiceMission;
     });
   });
