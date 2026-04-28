@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/api/index.ts"
+    },
+    {
+      "source": "/mesh/:path*",
+      "destination": "/api/index.ts"
+    },
+    {
+      "source": "/mesh-relay/:path*",
+      "destination": "/api/index.ts"
+    },
+    {
+      "source": "/downloads/:path*",
+      "destination": "/api/index.ts"
+    }
+  ]
+}

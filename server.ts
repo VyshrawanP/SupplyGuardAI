@@ -18,7 +18,7 @@ const ai = process.env.GEMINI_API_KEY ? new GoogleGenAI({ apiKey: process.env.GE
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-async function startServer() {
+export async function createExpressApp() {
   const app = express();
   const PORT = 3000;
 
@@ -522,9 +522,15 @@ async function startServer() {
     return res.status(400).json({ ok: false, error: "invalid_payload" });
   });
 
-  server.listen(PORT, "0.0.0.0", () => {
-    console.log(`SupplyGuard AI Server running on http://localhost:${PORT}`);
-  });
+  return { app, server };
 }
 
-startServer();
+// Start server locally
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  createExpressApp().then(({ server }) => {
+    const PORT = process.env.PORT || 3000;
+    server.listen(PORT, () => {
+      console.log(`SupplyGuard AI Server running on http://localhost:${PORT}`);
+    });
+  });
+}
